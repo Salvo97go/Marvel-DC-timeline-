@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Longbox Timeline</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<header class="top">
+  <button class="icon-btn only-narrow" id="btn-side" aria-label="Show filters" aria-controls="side" aria-expanded="false">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg>
+  </button>
+  <div class="brand">
+    <span class="brand-mark" aria-hidden="true"></span>
+    <span class="brand-name">Longbox</span>
+    <span class="brand-sub">Marvel &amp; DC, 1935–today</span>
+  </div>
+
+  <div class="seg" role="group" aria-label="Publisher">
+    <button type="button" class="seg-btn" data-pub="marvel" id="pub-marvel">Marvel</button>
+    <button type="button" class="seg-btn" data-pub="both" id="pub-both">Both</button>
+    <button type="button" class="seg-btn" data-pub="dc" id="pub-dc">DC</button>
+  </div>
+
+  <div class="search">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>
+    <input id="q" type="search" placeholder="Search titles, characters, writers, artists" autocomplete="off" aria-label="Search">
+  </div>
+
+  <div class="seg" role="group" aria-label="View">
+    <button type="button" class="seg-btn" data-view="timeline" id="view-timeline">Timeline</button>
+    <button type="button" class="seg-btn" data-view="grid" id="view-grid">Covers</button>
+  </div>
+
+  <div class="top-actions">
+    <button type="button" class="btn" id="btn-add">Add issue</button>
+    <button type="button" class="btn ghost" id="btn-export">Your edits</button>
+  </div>
+</header>
+
+<div class="app">
+  <aside class="side" id="side" aria-label="Filters">
+    <section class="side-sec">
+      <h2 class="side-h">Show</h2>
+      <div class="chips" id="type-chips"></div>
+    </section>
+
+    <details class="side-sec" open>
+      <summary class="side-h">Characters <span class="side-n" id="char-n"></span></summary>
+      <div class="tabs" role="group" aria-label="Character type">
+        <button type="button" class="tab" data-role="all">All</button>
+        <button type="button" class="tab" data-role="hero">Heroes</button>
+        <button type="button" class="tab" data-role="villain">Villains</button>
+      </div>
+      <input class="side-filter" id="char-q" type="search" placeholder="Find a character" aria-label="Find a character">
+      <ul class="list" id="char-list"></ul>
+    </details>
+
+    <details class="side-sec" open>
+      <summary class="side-h">Events <span class="side-n" id="event-n"></span></summary>
+      <ul class="list" id="event-list"></ul>
+    </details>
+
+    <details class="side-sec">
+      <summary class="side-h">Writers &amp; artists <span class="side-n" id="creator-n"></span></summary>
+      <input class="side-filter" id="creator-q" type="search" placeholder="Find a creator" aria-label="Find a creator">
+      <ul class="list" id="creator-list"></ul>
+    </details>
+
+    <section class="side-sec">
+      <h2 class="side-h">Your data</h2>
+      <div class="d-actions">
+        <button type="button" class="btn sm" id="side-add">Add issue</button>
+        <button type="button" class="btn ghost sm" id="side-export">Your edits</button>
+      </div>
+    </section>
+
+    <section class="side-sec side-help">
+      <h2 class="side-h">Getting around</h2>
+      <dl class="keys">
+        <dt>Scroll</dt><dd>move through time</dd>
+        <dt>Shift + scroll</dt><dd>move up and down</dd>
+        <dt>Ctrl + scroll</dt><dd>zoom</dd>
+        <dt>Drag</dt><dd>pan the timeline</dd>
+        <dt>← → + −</dt><dd>keyboard pan and zoom</dd>
+      </dl>
+      <p>Dates are cover dates, which usually ran two or three months ahead of the day an issue went on sale.</p>
+    </section>
+  </aside>
+  <div class="side-backdrop" id="side-backdrop" hidden></div>
+
+  <main class="main">
+    <div class="toolbar">
+      <div class="focus" id="focus" aria-live="polite"></div>
+      <div class="zoom" id="zoom-ctl">
+        <button type="button" class="icon-btn" id="zoom-out" aria-label="Zoom out"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12"/></svg></button>
+        <input type="range" id="zoom" min="0" max="1000" value="400" aria-label="Zoom">
+        <button type="button" class="icon-btn" id="zoom-in" aria-label="Zoom in"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12M12 6v12"/></svg></button>
+        <button type="button" class="btn ghost sm" id="zoom-fit">Whole history</button>
+      </div>
+    </div>
+
+    <div class="stage" id="stage" tabindex="0" aria-label="Timeline"></div>
+
+    <div class="minimap" id="minimap" aria-hidden="true">
+      <canvas id="mm-canvas"></canvas>
+      <div class="mm-window" id="mm-window"></div>
+    </div>
+  </main>
+
+  <aside class="drawer" id="drawer" aria-label="Issue details" hidden>
+    <button type="button" class="icon-btn drawer-close" id="drawer-close" aria-label="Close details"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    <div class="drawer-body" id="drawer-body"></div>
+  </aside>
+</div>
+
+<div class="modal" id="modal" hidden>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <button type="button" class="icon-btn drawer-close" id="modal-close" aria-label="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<div class="tip" id="tip" hidden></div>
+<div class="toast" id="toast" hidden></div>
+
+<script src="data/marvel.js"></script>
+<script src="data/dc.js"></script>
+<script src="data/events.js"></script>
+<script src="data/crossovers.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

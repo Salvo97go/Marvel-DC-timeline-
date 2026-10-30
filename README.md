@@ -1,0 +1,41 @@
+# Longbox: a Marvel & DC timeline
+
+An interactive timeline of Marvel and DC comics from 1935 to today: first appearances, series launches, landmark stories, crossover events and their tie-ins, and the industry history that ties them together.
+
+## Running it
+
+No build step. Open `index.html` in a browser, or serve the folder (for example `python3 -m http.server`) and visit it. It also works on GitHub Pages as-is.
+
+## What you can do
+
+- **Marvel / Both / DC** switches between each publisher alone and both side by side. Intercompany crossovers always show in their own lane.
+- **Timeline** view: scroll through time, Ctrl/⌘ + scroll (or the slider) to zoom. Zoomed out you see the whole history as colored marks; zoomed in you get covers. **Whole history** fits all of it on screen, and the minimap at the bottom shows how busy each year was. Click or drag it to jump.
+- **Covers** view: every entry as a cover, grouped by decade and year.
+- **Characters**: pick a hero or villain to follow just their issues, including the events they were part of.
+- **Events**: the purple bars. Open one for its reading order, core series and tie-ins.
+- **Search** matches titles, characters, writers, artists and notes.
+- **Edit details / Add issue**: fill in writers, artists, cover image links and notes. Edits are saved in your browser; **Your edits** lets you copy them out so they can be added to the data files.
+
+## The data
+
+| File | Contents |
+| --- | --- |
+| `data/marvel.js` | Marvel issues |
+| `data/dc.js` | DC issues |
+| `data/events.js` | Crossover events (shown as bars), Marvel, DC and intercompany |
+| `data/crossovers.js` | Intercompany crossovers, shared industry history, and hero/villain tags |
+
+Each issue looks like this:
+
+```js
+{ date: "1962-08", title: "Amazing Fantasy", issue: "15", type: "first",
+  characters: ["Spider-Man"], writers: ["Stan Lee"], artists: ["Steve Ditko"],
+  summary: "…", event: "", cover: "" }
+```
+
+- `date` is the **cover date** (`YYYY-MM`, or `YYYY`). Cover dates ran two or three months ahead of the on-sale date.
+- `type` is `first`, `launch`, `key`, `tiein` or `milestone`. Events live in `events.js`.
+- `event` links a tie-in to an event id from `events.js`.
+- `cover` is an optional image URL. Without one, the app draws a cover in the publisher's colors.
+
+The dataset is a curated starting point of about 280 entries and 66 events, not a complete index of every issue.
