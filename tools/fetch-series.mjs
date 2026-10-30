@@ -28,6 +28,7 @@ const PUB_QUERY = { marvel: 'Marvel', dc: 'DC Comics' };
 
 // Event names that Metron files differently.
 const ARC_SEARCH = {
+  'kree-skrull-war': 'Kree / Skrull',
   'onslaught': 'Onslaught',
   'hox-pox': 'House of X',
   'judgment-day': 'Judgment Day',
@@ -168,6 +169,8 @@ async function arcs() {
       const mid = years[Math.floor(years.length / 2)];
       if (mid >= y1 - 1 && mid <= y2 + 1) { chosen = { arc: a.id, name: a.name, issues }; break; }
     }
+    // No reading order in Metron: fall back to the event's own core series.
+    if (!chosen) chosen = await coreSeriesArc(ev);
     cache.arcs[ev.id] = chosen ? {
       arc: chosen.arc, name: chosen.name,
       issues: chosen.issues.map((i) => ({ id: i.id, s: i.series.id, sn: i.series.name, sv: i.series.volume, sy: i.series.year_began, n: i.number, d: ym(i.cover_date), img: i.image }))
@@ -175,6 +178,29 @@ async function arcs() {
     console.log(`  ${chosen ? '✓' : '–'} ${ev.name}${chosen ? ` → "${chosen.name}" (${chosen.issues.length} issues)` : ''}`);
     saveCache();
   }
+}
+
+async function coreSeriesArc(ev) {
+  const titles = String(ev.series || '').split(/,\s*|\s+&\s+/).map((t) => t.split(' #')[0].trim()).filter(Boolean);
+  const y = +ev.start.slice(0, 4);
+  const issues = [];
+  for (const t of [...new Set(titles)]) {
+    let found = null;
+    for (const variant of [...new Set([t, t.replace(/\s*\/\s*/g, ' / ')])]) {
+      for (const yy of [y, y - 1, y + 1]) {
+        const d = await get('/issue/' + qs({ series_name: variant, cover_year: yy }));
+        found = (d.results || []).find((r) => norm(r.series.name) === norm(t));
+        if (found) break;
+      }
+      if (found) break;
+    }
+    if (!found) continue;
+    const all = await getAll(`/series/${found.series.id}/issue_list/`);
+    issues.push(...all);
+  }
+  if (!issues.length) return null;
+  issues.sort((a, b) => String(a.cover_date).localeCompare(String(b.cover_date)));
+  return { arc: null, name: `${ev.name} (core series)`, issues };
 }
 
 // ── 4. Full issue lists ──────────────────────────────────────────────

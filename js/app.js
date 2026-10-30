@@ -588,7 +588,17 @@
   function jumpToFirst() {
     if (state.view === 'series') {
       const ev = state.event && BYID['event-' + state.event];
-      if (ev) { stage.scrollTo({ left: Math.max(0, X(ev.y - 1) - LABEL_W() - 24), top: 0, behavior: 'smooth' }); return; }
+      if (ev) {
+        // Zoom so the event plus a year either side fills the view. Wait a
+        // tick so the event panel that opens alongside has taken its space.
+        setTimeout(() => {
+          const span = toYear(ev.end || ev.date) + 1 / 12 - ev.y + 2;
+          setZoom((stage.clientWidth - LABEL_W() - 40) / span);
+          stage.scrollTop = 0;
+          stage.scrollLeft = X(ev.y - 1) - LABEL_W() - 24;
+        }, 0);
+        return;
+      }
       const s = SV.list && SV.list.slice().sort((a, b) => a.y0 - b.y0)[0];
       if (s) stage.scrollTo({ left: Math.max(0, X(s.y0) - LABEL_W() - 60), top: 0, behavior: 'smooth' });
       return;
