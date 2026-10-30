@@ -49,4 +49,10 @@ Covers come from the free [Metron](https://metron.cloud) comic database. With a 
 METRON_USERNAME=you METRON_PASSWORD=secret node tools/fetch-covers.mjs
 ```
 
+In a Claude cloud session, the login is stored as a network secret for `metron.cloud` instead, and Node needs to be told to use the session's proxy:
+
+```sh
+NODE_USE_ENV_PROXY=1 NODE_EXTRA_CA_CERTS=/root/.ccr/ca-bundle.crt node tools/fetch-covers.mjs
+```
+
 This looks up each issue and writes the links to `data/covers.js`. It takes about 10 minutes because of Metron's rate limit, and it's safe to stop and re-run. A `cover` set directly on an issue overrides the fetched one.

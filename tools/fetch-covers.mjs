@@ -67,18 +67,23 @@ function titleVariants(t) {
   return v;
 }
 
+const norm = (t) => String(t || '').toLowerCase().replace(/^the\s+/, '').replace(/[^a-z0-9]+/g, ' ').trim();
+
+// series_name is a "contains" match, so filter by cover year and prefer a
+// series whose name matches the title exactly.
 async function findCover(pub, it) {
   const year = +String(it.date).slice(0, 4);
+  const want = norm(it.title);
   for (const title of titleVariants(it.title)) {
-    const qs = new URLSearchParams({ series_name: title, number: it.issue });
-    if (PUBLISHER[pub]) qs.set('publisher_name', PUBLISHER[pub]);
-    const data = await get(`${BASE}/issue/?${qs}`);
-    await sleep(DELAY_MS);
-    const hits = (data.results || [])
-      .map((r) => ({ r, diff: Math.abs(+String(r.cover_date || '').slice(0, 4) - year) }))
-      .filter((h) => h.r.image && h.diff <= 1)
-      .sort((a, b) => a.diff - b.diff);
-    if (hits.length) return hits[0].r.image;
+    for (const y of [year, year + 1, year - 1]) {
+      const qs = new URLSearchParams({ series_name: title, number: it.issue, cover_year: y });
+      if (PUBLISHER[pub]) qs.set('publisher_name', PUBLISHER[pub]);
+      const data = await get(`${BASE}/issue/?${qs}`);
+      await sleep(DELAY_MS);
+      const hits = (data.results || []).filter((r) => r.image);
+      const exact = hits.find((r) => norm(r.series && r.series.name) === want);
+      if (exact) return exact.image;
+    }
   }
   return null;
 }
