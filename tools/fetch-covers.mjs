@@ -60,11 +60,27 @@ async function get(url, tries = 0) {
   return res.json();
 }
 
+// Titles Metron files under a different series name.
+const ALIASES = {
+  'Luke Cage, Hero for Hire': ['Hero for Hire'],
+  'Uncanny X-Men': ['X-Men'], // the title was plain "X-Men" until #142
+  'X-Men: Alpha': ['X-Men Alpha'],
+  'X-Men: Omega': ['X-Men Omega'],
+  'AvX: VS': ['AVX Vs'],
+  'The Saga of the Swamp Thing': ['The Saga of Swamp Thing'],
+  'Vengeance of Bane': ['Batman: Vengeance of Bane Special'],
+  'DC Countdown': ['Countdown to Infinite Crisis'],
+  'All-Star Superman': ['All Star Superman'],
+  'Marvel and DC Present': ['Marvel and DC Present Featuring The Uncanny X-Men and The New Teen Titans'],
+  'Deadpool/Batman': ['Marvel / DC: Deadpool / Batman'],
+  'Batman/Deadpool': ['DC / Marvel: Batman / Deadpool']
+};
+
 // "The Amazing Spider-Man" is filed under "Amazing Spider-Man" in some places.
 function titleVariants(t) {
   const v = [t];
   if (/^the /i.test(t)) v.push(t.replace(/^the /i, ''));
-  return v;
+  return v.concat(ALIASES[t] || []);
 }
 
 const norm = (t) => String(t || '').toLowerCase().replace(/^the\s+/, '').replace(/[^a-z0-9]+/g, ' ').trim();
@@ -73,17 +89,26 @@ const norm = (t) => String(t || '').toLowerCase().replace(/^the\s+/, '').replace
 // series whose name matches the title exactly.
 async function findCover(pub, it) {
   const year = +String(it.date).slice(0, 4);
-  const want = norm(it.title);
-  for (const title of titleVariants(it.title)) {
-    for (const y of [year, year + 1, year - 1]) {
-      const qs = new URLSearchParams({ series_name: title, number: it.issue, cover_year: y });
-      if (PUBLISHER[pub]) qs.set('publisher_name', PUBLISHER[pub]);
-      const data = await get(`${BASE}/issue/?${qs}`);
-      await sleep(DELAY_MS);
-      const hits = (data.results || []).filter((r) => r.image);
-      const exact = hits.find((r) => norm(r.series && r.series.name) === want);
-      if (exact) return exact.image;
+  // Golden Age Marvel is filed under Timely, so retry without the publisher.
+  for (const publisher of [PUBLISHER[pub], null]) {
+    for (const title of titleVariants(it.title)) {
+      const hit = await search(title, it.issue, year, publisher);
+      if (hit) return hit;
     }
+    if (!PUBLISHER[pub]) break;
+  }
+  return null;
+}
+
+async function search(title, number, year, publisher) {
+  const want = norm(title);
+  for (const y of [year, year + 1, year - 1]) {
+    const qs = new URLSearchParams({ series_name: title, number, cover_year: y });
+    if (publisher) qs.set('publisher_name', publisher);
+    const data = await get(`${BASE}/issue/?${qs}`);
+    await sleep(DELAY_MS);
+    const exact = (data.results || []).find((r) => r.image && norm(r.series && r.series.name) === want);
+    if (exact) return exact.image;
   }
   return null;
 }
