@@ -5,6 +5,9 @@
  *
  *   METRON_USERNAME=you METRON_PASSWORD=secret node tools/fetch-covers.mjs
  *
+ * In a Claude cloud session, the login can instead be stored as a network
+ * secret for metron.cloud; the proxy adds it, so no variables are needed.
+ *
  * Safe to re-run: issues that already have a cover are skipped, so an
  * interrupted run picks up where it left off. Covers you set by hand in
  * the data files (`cover: "..."`) always win over these.
@@ -23,8 +26,7 @@ const DELAY_MS = +(process.env.METRON_DELAY_MS || 2100); // Metron allows ~30 re
 const PUBLISHER = { marvel: 'Marvel', dc: 'DC Comics' };
 
 if (!USER || !PASS) {
-  console.error('Set METRON_USERNAME and METRON_PASSWORD (your metron.cloud login) first.');
-  process.exit(1);
+  console.log('No METRON_USERNAME/METRON_PASSWORD set; relying on a network secret to log in.');
 }
 
 // Load the data files the same way the browser does.
@@ -42,17 +44,18 @@ const misses = [];
 const keyOf = (pub, it) => [pub, it.title, it.issue || '', it.date].join('|');
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-const auth = 'Basic ' + Buffer.from(`${USER}:${PASS}`).toString('base64');
+const headers = { Accept: 'application/json', 'User-Agent': 'LongboxTimeline/1.0' };
+if (USER && PASS) headers.Authorization = 'Basic ' + Buffer.from(`${USER}:${PASS}`).toString('base64');
 
 async function get(url, tries = 0) {
-  const res = await fetch(url, { headers: { Authorization: auth, Accept: 'application/json', 'User-Agent': 'LongboxTimeline/1.0' } });
+  const res = await fetch(url, { headers });
   if (res.status === 429 && tries < 5) {
     const wait = (+res.headers.get('retry-after') || 60) * 1000;
     console.log(`  rate limited, waiting ${Math.round(wait / 1000)}s`);
     await sleep(wait);
     return get(url, tries + 1);
   }
-  if (res.status === 401 || res.status === 403) throw new Error('Metron rejected the login. Check METRON_USERNAME and METRON_PASSWORD.');
+  if (res.status === 401 || res.status === 403) throw new Error('Metron rejected the login. Check the username and password.');
   if (!res.ok) throw new Error(`Metron returned ${res.status} for ${url}`);
   return res.json();
 }
