@@ -4,4 +4,22 @@
  */
 window.TIMELINE = window.TIMELINE || {};
 window.TIMELINE.covers = {
+  "marvel|Amazing Fantasy|15|1962-08": "https://static.metron.cloud/media/issue/2023/11/25/af-15.jpg",
+  "marvel|Fantastic Four|1|1961-11": "https://static.metron.cloud/media/issue/2018/11/23/ff-1.jpg",
+  "marvel|Fantastic Four|2|1962-01": "https://static.metron.cloud/media/issue/2018/11/23/ff-2.jpg",
+  "marvel|Fantastic Four|5|1962-07": "https://static.metron.cloud/media/issue/2018/11/23/ff-5.jpg",
+  "marvel|Journey into Mystery|83|1962-08": "https://static.metron.cloud/media/issue/2021/01/29/jim-v1-83.jpg",
+  "marvel|Journey into Mystery|85|1962-10": "https://static.metron.cloud/media/issue/2021/01/29/jim-v1-85.jpg",
+  "marvel|Strange Tales|110|1963-07": "https://static.metron.cloud/media/issue/2021/01/24/strange-tales-v1-110.jpg",
+  "marvel|Tales of Suspense|39|1963-03": "https://static.metron.cloud/media/issue/2021/01/26/tales-suspense-v1-39.jpg",
+  "marvel|Tales to Astonish|13|1960-11": "https://static.metron.cloud/media/issue/2021/01/27/tales-astonish-v1-13.jpg",
+  "marvel|Tales to Astonish|35|1962-09": "https://static.metron.cloud/media/issue/2021/01/28/tales-astonish-v1-35.jpg",
+  "marvel|Tales to Astonish|44|1963-06": "https://static.metron.cloud/media/issue/2021/01/28/tales-astonish-v1-44.jpg",
+  "marvel|The Amazing Spider-Man|1|1963-03": "https://static.metron.cloud/media/issue/2019/11/14/asm-v1-1.jpg",
+  "marvel|The Amazing Spider-Man|2|1963-05": "https://static.metron.cloud/media/issue/2019/11/14/asm-v1-2.jpg",
+  "marvel|The Amazing Spider-Man|3|1963-07": "https://static.metron.cloud/media/issue/2019/11/14/asm-v1-3.jpg",
+  "marvel|The Avengers|1|1963-09": "https://static.metron.cloud/media/issue/2020/10/11/avengers-v1-1.jpg",
+  "marvel|The Avengers|4|1964-03": "https://static.metron.cloud/media/issue/2020/10/11/avengers-v1-4.jpg",
+  "marvel|The Incredible Hulk|1|1962-05": "https://static.metron.cloud/media/issue/2020/11/01/incredible-hulk-v1-1.jpg",
+  "marvel|The X-Men|1|1963-09": "https://static.metron.cloud/media/issue/2020/10/09/xmen-v1-1.jpg"
 };
