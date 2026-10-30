@@ -34,6 +34,7 @@
 
   <div class="seg" role="group" aria-label="View">
     <button type="button" class="seg-btn" data-view="timeline" id="view-timeline">Timeline</button>
+    <button type="button" class="seg-btn" data-view="series" id="view-series">Series</button>
     <button type="button" class="seg-btn" data-view="grid" id="view-grid">Covers</button>
   </div>
 
@@ -45,7 +46,7 @@
 
 <div class="app">
   <aside class="side" id="side" aria-label="Filters">
-    <section class="side-sec">
+    <section class="side-sec" id="type-sec">
       <h2 class="side-h">Show</h2>
       <div class="chips" id="type-chips"></div>
     </section>
@@ -97,6 +98,13 @@
   <main class="main">
     <div class="toolbar">
       <div class="focus" id="focus" aria-live="polite"></div>
+      <div class="sv-ctl" id="sv-ctl" hidden>
+        <div class="seg" role="group" aria-label="Arrange series">
+          <button type="button" class="seg-btn" data-svgroup="family" id="svgroup-family">By franchise</button>
+          <button type="button" class="seg-btn" data-svgroup="date" id="svgroup-date">Release order</button>
+        </div>
+        <button type="button" class="chip" id="sv-oneshots" aria-pressed="false"><span class="sw" style="--c:var(--muted)"></span>One-shots</button>
+      </div>
       <div class="zoom" id="zoom-ctl">
         <button type="button" class="icon-btn" id="zoom-out" aria-label="Zoom out"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12"/></svg></button>
         <input type="range" id="zoom" min="0" max="1000" value="400" aria-label="Zoom">
@@ -134,6 +142,7 @@
 <script src="data/events.js"></script>
 <script src="data/crossovers.js"></script>
 <script src="data/covers.js"></script>
+<script src="data/series.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

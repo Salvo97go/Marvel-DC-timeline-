@@ -331,6 +331,24 @@ details.side-sec[open] > summary::after { content: "−"; }
 .t-milestone .cv-brand { background: var(--t-milestone); }
 .t-event .cv { background-color: color-mix(in srgb, var(--t-event) 80%, #000); }
 
+/* ── Series view ────────────────────────────────────────────────── */
+.sv { position: relative; }
+.sv-canvas { position: sticky; left: 0; top: 0; display: block; }
+body[data-view="series"] #type-sec { display: none; }
+.sv-ctl { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.sv-ctl .seg-btn { padding: 4px 10px; font-size: 12px; }
+.issue-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 10px 8px; }
+.ig {
+  display: flex; flex-direction: column; gap: 2px; padding: 0; border: 0; background: transparent; cursor: pointer; text-align: left; min-width: 0;
+}
+.ig img, .ig::before { width: 100%; aspect-ratio: 2 / 3; border-radius: 2px; object-fit: cover; background: var(--line); box-shadow: var(--shadow); }
+.ig:not(:has(img))::before { content: ""; display: block; }
+.ig span { font: 600 11px var(--f-body); }
+.ig i { font: normal 9px var(--f-mono); color: var(--muted); }
+.ig.tie img { outline: 2px solid var(--t-event); outline-offset: 1px; }
+.ig.key img { outline: 3px solid var(--tc, var(--ink)); outline-offset: 1px; }
+.ig:hover img { transform: translateY(-2px); }
+
 /* ── Cover grid view ────────────────────────────────────────────── */
 .grid-view {
   padding-block: 8px 40px;
@@ -479,6 +497,7 @@ details.side-sec[open] > summary::after { content: "−"; }
   .decade { grid-template-columns: 1fr; }
   .decade-h { position: static; margin-bottom: 8px; }
   .top-actions { display: none; }
+  .focus .story { display: none; }
   .row2 { grid-template-columns: 1fr; }
 }
 @media (prefers-reduced-motion: reduce) {

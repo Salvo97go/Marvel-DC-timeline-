@@ -4,7 +4,7 @@
   const T = window.TIMELINE || {};
   const MIN_YEAR = 1935;
   const MAX_YEAR = new Date().getFullYear() + 2;
-  const PADL = 40;
+  let PADL = 40; // left padding of the time axis; the series view adds its label column
   const PADR = 120;
   const LANE_HEAD = 38;
   const BAND_H = 26;
@@ -136,6 +136,7 @@
 
     ITEMS = out.filter((it) => !isNaN(it.y)).sort((a, b) => a.y - b.y || (a.type === 'event') - (b.type === 'event'));
 
+    if (typeof linkSeries === 'function') linkSeries();
     ROLE = {};
     ((T.roles && T.roles.hero) || []).forEach((n) => { ROLE[n] = 'hero'; });
     ((T.roles && T.roles.villain) || []).forEach((n) => { ROLE[n] = 'villain'; });
@@ -165,7 +166,7 @@
     selected: null
   };
   function savePrefs() {
-    store.set('prefs', { pub: state.pub, view: state.view, types: [...state.types], ppy: state.ppy });
+    store.set('prefs', { pub: state.pub, view: state.view, types: [...state.types], ppy: state.ppy, svGroup: state.svGroup });
   }
 
   function inPub(it) {
@@ -220,6 +221,9 @@
   const yearAt = (px) => (px - PADL) / state.ppy + MIN_YEAR;
   const canvasWidth = () => PADL + (MAX_YEAR - MIN_YEAR) * state.ppy + PADR;
   function fitPpy() { return Math.max(4, (stage.clientWidth - PADL - PADR + 60) / (MAX_YEAR - MIN_YEAR)); }
+  const timeView = () => state.view === 'timeline' || state.view === 'series';
+  function setPadl() { PADL = state.view === 'series' ? LABEL_W() + 24 : 40; }
+  function renderTime() { if (state.view === 'series') renderSeries(); else renderTimeline(); }
   function zoomMode() { return state.ppy >= 300 ? 'full' : state.ppy >= 80 ? 'mini' : 'dot'; }
   function lanes() { return state.pub === 'both' ? ['marvel', 'crossover', 'dc'] : [state.pub, 'crossover']; }
 
@@ -369,13 +373,14 @@
     const vis = ITEMS.filter((it) => matches(it));
     const counts = {};
     let max = 1;
-    vis.forEach((it) => {
-      if (it.type === 'event') return;
-      const y = Math.floor(it.y);
+    const bump = (y, pub) => {
       const c = counts[y] || (counts[y] = { marvel: 0, dc: 0, crossover: 0 });
-      c[it.publisher]++;
+      c[pub] = (c[pub] || 0) + 1;
       max = Math.max(max, c.marvel + c.dc + c.crossover);
-    });
+    };
+    // In the series view the bars count every issue of the series shown.
+    if (state.view === 'series' && SV.list) SV.list.forEach((s) => s.ys.forEach((y) => bump(Math.floor(y), s.pub)));
+    else vis.forEach((it) => { if (it.type !== 'event') bump(Math.floor(it.y), it.publisher); });
     const bw = Math.max(1, W / span - 1);
     const base = H - 14;
     const scale = (base - 12) / max;
@@ -407,7 +412,7 @@
     updateWindow();
   }
   function updateWindow() {
-    if (state.view !== 'timeline') { mmWindow.hidden = true; return; }
+    if (!timeView()) { mmWindow.hidden = true; return; }
     mmWindow.hidden = false;
     const W = mmCanvas.clientWidth;
     const total = canvasWidth();
@@ -443,7 +448,7 @@
     const prevMode = zoomMode();
     state.ppy = ppy;
     zoomInput.value = ppyToSlider(ppy);
-    renderTimeline();
+    renderTime();
     stage.scrollLeft = X(anchorYear) - anchorX;
     if (prevMode !== zoomMode()) hideTip();
     updateWindow();
@@ -521,7 +526,9 @@
     const vis = ITEMS.filter((it) => matches(it));
     const issues = vis.filter((i) => i.type !== 'event' && i.type !== 'milestone');
     const x = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
-    let h = `<span class="count">${issues.length} issues · ${vis.filter((i) => i.type === 'event').length} events</span>`;
+    let h = state.view === 'series' && SERIES.length
+      ? `<span class="count">${SERIES.filter(seriesMatches).length} series</span>`
+      : `<span class="count">${issues.length} issues · ${vis.filter((i) => i.type === 'event').length} events</span>`;
     if (state.q) h += `<span class="pill">“${esc(state.q)}”<button type="button" data-clear="q" aria-label="Clear search">${x}</button></span>`;
     if (state.char) h += `<span class="pill">${esc(state.char)}<button type="button" data-clear="char" aria-label="Stop following ${esc(state.char)}">${x}</button></span>`;
     if (state.creator) h += `<span class="pill">${esc(state.creator)}<button type="button" data-clear="creator" aria-label="Clear creator filter">${x}</button></span>`;
@@ -538,6 +545,8 @@
     } else if (state.event) {
       const ev = BYID['event-' + state.event];
       if (ev) h += `<span class="story"><b>${esc(fmtRange(ev.date, ev.end))}</b> · ${esc(ev.series || '')}</span>`;
+    } else if (!state.q && state.view === 'series') {
+      h += `<span class="story">Each row is one series, with every issue at its release date. Click an event bar to light up its tie-ins, or a series name to see every cover.</span>`;
     } else if (!state.q) {
       h += `<span class="story">Click any cover or event bar for details. Pick a character to follow their whole history.</span>`;
     }
@@ -547,7 +556,11 @@
   function syncControls() {
     document.querySelectorAll('[data-pub]').forEach((b) => b.classList.toggle('on', b.dataset.pub === state.pub));
     document.querySelectorAll('[data-view]').forEach((b) => b.classList.toggle('on', b.dataset.view === state.view));
-    $('#zoom-ctl').hidden = state.view !== 'timeline';
+    $('#zoom-ctl').hidden = !timeView();
+    $('#sv-ctl').hidden = state.view !== 'series';
+    document.body.dataset.view = state.view;
+    document.querySelectorAll('[data-svgroup]').forEach((b) => b.classList.toggle('on', b.dataset.svgroup === state.svGroup));
+    $('#sv-oneshots').setAttribute('aria-pressed', String(state.svOneShots));
   }
 
   // Full refresh: filters, lists, main view, minimap.
@@ -559,10 +572,11 @@
     renderCreatorList();
     renderEventList();
     renderFocus();
-    if (state.view === 'timeline') {
+    if (timeView()) {
+      setPadl();
       state.ppy = clamp(state.ppy, fitPpy(), MAX_PPY);
       zoomInput.value = ppyToSlider(state.ppy);
-      renderTimeline();
+      renderTime();
     } else {
       renderGrid();
     }
@@ -572,6 +586,13 @@
   }
 
   function jumpToFirst() {
+    if (state.view === 'series') {
+      const ev = state.event && BYID['event-' + state.event];
+      if (ev) { stage.scrollTo({ left: Math.max(0, X(ev.y - 1) - LABEL_W() - 24), top: 0, behavior: 'smooth' }); return; }
+      const s = SV.list && SV.list.slice().sort((a, b) => a.y0 - b.y0)[0];
+      if (s) stage.scrollTo({ left: Math.max(0, X(s.y0) - LABEL_W() - 60), top: 0, behavior: 'smooth' });
+      return;
+    }
     const first = ITEMS.find((it) => matches(it));
     if (!first) return;
     if (state.view === 'timeline') {
@@ -606,6 +627,7 @@
   function closeDrawer() {
     drawer.hidden = true;
     state.selected = null;
+    if (state.view === 'series') { SV.sel = null; SV.selSeries = null; scheduleSeriesDraw(); }
     document.querySelectorAll('.it.sel, .band.sel').forEach((el) => el.classList.remove('sel'));
     requestAnimationFrame(updateWindow);
   }
@@ -633,11 +655,25 @@
 
     if (it.type === 'event') {
       const parts = eventParts(it);
+      const arc = T.arcs && T.arcs[it.event];
+      if (arc && arc.issues.length) {
+        const list = arc.issues.map((id) => ISSUE_AT.get(id)).filter(Boolean);
+        const nSeries = new Set(list.map((a) => a[0])).size;
+        h += `<div class="d-sec"><h3>Full reading order · ${list.length} issues from ${nSeries} series</h3><ol class="reading">${list.map(([ser, i]) => {
+          const iss = ser.issues[i];
+          const key = KEY_AT.get(iss[0]);
+          return `<li><button type="button" data-issue="${ser.id}:${i}"${key ? ' class="core"' : ''}><span class="rd">${esc(fmtDate(iss[2]))}</span><span>${esc(ser.title)} #${esc(iss[1])}${key ? `<span class="rk">★ ${esc(TYPES[key.type].short)}</span>` : ''}</span></button></li>`;
+        }).join('')}</ol></div>`;
+        h += `<p class="d-note">Reading order from <a href="https://metron.cloud" target="_blank" rel="noopener">Metron</a>. In the Series view, this event lights up every one of these issues.</p>`;
+      }
       const reading = [it, ...parts].sort((a, b) => a.y - b.y);
-      h += `<div class="d-sec"><h3>Reading order on this timeline</h3><ol class="reading">${reading.map((p) => `<li><button type="button" data-open="${esc(p.id)}" class="${p === it ? 'core' : ''}"><span class="rd">${esc(fmtDate(p.date))}</span><span>${esc(p === it ? (it.series || it.title) : label(p))}<span class="rk">${esc(p === it ? 'Core series' : TYPES[p.type].short)}</span></span></button></li>`).join('')}</ol></div>`;
+      if (!arc) h += `<div class="d-sec"><h3>Reading order on this timeline</h3><ol class="reading">${reading.map((p) => `<li><button type="button" data-open="${esc(p.id)}" class="${p === it ? 'core' : ''}"><span class="rd">${esc(fmtDate(p.date))}</span><span>${esc(p === it ? (it.series || it.title) : label(p))}<span class="rk">${esc(p === it ? 'Core series' : TYPES[p.type].short)}</span></span></button></li>`).join('')}</ol></div>`;
+      h += `<div class="d-actions"><button type="button" class="btn ghost" data-act="series-event" data-event-id="${esc(it.event)}">See it across every series</button></div>`;
       h += `<div class="d-actions"><button type="button" class="btn" data-event="${esc(it.event)}">Show only this event</button><button type="button" class="btn ghost" data-act="edit" data-id="${esc(it.id)}">Edit details</button></div>`;
     } else {
-      h += `<div class="d-actions"><button type="button" class="btn ghost" data-act="locate" data-id="${esc(it.id)}">Show on timeline</button><button type="button" class="btn ghost" data-act="edit" data-id="${esc(it.id)}">Edit details</button></div>`;
+      const ser = seriesOf(it);
+      if (ser) h += seriesLinkHtml(ser, ISSUE_AT.get(it.metron)[1]) + issueNavHtml(ser, ISSUE_AT.get(it.metron)[1]);
+      h += `<div class="d-actions">${ser ? `<button type="button" class="btn" data-series="${ser.id}">See the whole series</button>` : ''}<button type="button" class="btn ghost" data-act="locate" data-id="${esc(it.id)}">Show on timeline</button><button type="button" class="btn ghost" data-act="edit" data-id="${esc(it.id)}">Edit details</button></div>`;
     }
     const lookup = encodeURIComponent(`${label(it)} ${String(it.date).slice(0, 4)} ${it.publisher === 'dc' ? 'DC' : 'Marvel'} comic`);
     h += `<p class="d-note">Look it up: <a href="https://www.google.com/search?q=${lookup}" target="_blank" rel="noopener">web search</a> · <a href="https://www.google.com/search?tbm=isch&q=${lookup}%20cover" target="_blank" rel="noopener">cover images</a></p>`;
@@ -813,6 +849,532 @@
     toastTimer = setTimeout(() => { t.hidden = true; }, 2600);
   }
 
+  // ── Series view ──────────────────────────────────────────────────
+  // Every series is one row on the shared time axis; each issue sits at its
+  // cover date. Drawn on a canvas because a full run can be 1,000+ issues.
+  const SERIES = (T.series || []).filter((s) => s.issues && s.issues.length);
+  const SERIES_BY_ID = new Map();
+  const ISSUE_AT = new Map(); // Metron issue id -> [series, index]
+  const ARCS_OF = new Map(); // Metron issue id -> [event ids]
+  const KEY_AT = new Map(); // Metron issue id -> timeline item
+  const IMG_BASE = T.imgBase || '';
+  const FAMILIES = [
+    ['marvel', 'Spider-Man', /spider|venom|carnage|web of|peter parker/i],
+    ['marvel', 'X-Men', /x-men|x-factor|x-force|new mutants|wolverine|excalibur|cable|deadpool|gambit|generation x|house of x|powers of x|mutant|\bx-|^x\b/i],
+    ['marvel', 'Avengers', /avengers|thunderbolts|illuminati|vision|scarlet witch|hawkeye|black widow|ant-man|wasp|ultimates/i],
+    ['marvel', 'Captain America', /captain america|winter soldier|falcon/i],
+    ['marvel', 'Iron Man', /iron man/i],
+    ['marvel', 'Thor', /thor|loki|asgard|journey into mystery/i],
+    ['marvel', 'Hulk', /hulk/i],
+    ['marvel', 'Fantastic Four', /fantastic four|\bff\b/i],
+    ['marvel', 'Cosmic', /silver surfer|guardians|thanos|infinity|annihilation|nova|captain marvel|ms\. marvel|warlock|cosmic|kree|skrull|marvel super-heroes/i],
+    ['marvel', 'Street level', /daredevil|punisher|luke cage|hero for hire|iron fist|moon knight|alias|jessica jones|defenders|elektra|blade|ghost rider|tomb of dracula|werewolf/i],
+    ['dc', 'Batman', /batman|detective comics|robin|nightwing|batgirl|batwoman|catwoman|joker|harley|gotham|red hood|arkham|bane|dark knight|knight/i],
+    ['dc', 'Superman', /superman|action comics|supergirl|superboy|steel|lois lane|jimmy olsen|man of steel|doomsday/i],
+    ['dc', 'Wonder Woman', /wonder woman|sensation comics/i],
+    ['dc', 'Justice League', /justice league|\bjla\b|\bjsa\b|justice society|all.star comics/i],
+    ['dc', 'Green Lantern', /lantern|sinestro/i],
+    ['dc', 'Flash', /flash/i],
+    ['dc', 'Teen Titans', /titans/i],
+    ['dc', 'Aquaman', /aquaman/i],
+    ['dc', 'Vertigo & horror', /sandman|swamp thing|hellblazer|constantine|doom patrol|watchmen|spectre|house of secrets/i]
+  ];
+  const FAMILY_ORDER = [...FAMILIES.filter((f) => f[0] === 'marvel').map((f) => f[1]), 'Marvel events & minis', 'More Marvel',
+    'Marvel × DC', ...FAMILIES.filter((f) => f[0] === 'dc').map((f) => f[1]), 'DC events & minis', 'More DC'];
+  const SV = { rows: [], headerH: 0, contentH: 0, evRows: [], hover: null, sel: null, selSeries: null, colors: null, raf: 0, imgs: new Map(), fit: new Map() };
+  state.svGroup = saved.svGroup || 'family';
+  state.svOneShots = false;
+
+  function buildSeries() {
+    SERIES.forEach((s) => {
+      SERIES_BY_ID.set(s.id, s);
+      s.ys = s.issues.map((i) => toYear(i[2]));
+      s.y0 = s.ys[0];
+      s.y1 = s.ys[s.ys.length - 1] + 1 / 12;
+      s.title = String(s.name || '').replace(/\s*\(\d{4}\)\s*$/, '');
+      const endY = s.end || Math.floor(s.ys[s.ys.length - 1]);
+      s.years = s.end == null && s.y1 > new Date().getFullYear() - 0.2 ? `${s.began || Math.floor(s.y0)}–now` : (s.began || Math.floor(s.y0)) === endY ? String(endY) : `${s.began || Math.floor(s.y0)}–${endY}`;
+      s.events = new Set();
+      s.keys = [];
+      s.chars = new Set();
+      s.creators = new Set();
+      s.issues.forEach((i, idx) => ISSUE_AT.set(i[0], [s, idx]));
+    });
+    Object.entries(T.arcs || {}).forEach(([ev, a]) => a.issues.forEach((id) => {
+      if (!ARCS_OF.has(id)) ARCS_OF.set(id, []);
+      ARCS_OF.get(id).push(ev);
+      const at = ISSUE_AT.get(id);
+      if (at) at[0].events.add(ev);
+    }));
+  }
+  function linkSeries() {
+    KEY_AT.clear();
+    SERIES.forEach((s) => { s.keys = []; s.chars.clear(); s.creators.clear(); });
+    ITEMS.forEach((it) => {
+      const id = (T.links || {})[coverKey(it)];
+      if (!id) return;
+      it.metron = id;
+      KEY_AT.set(id, it);
+      const at = ISSUE_AT.get(id);
+      if (!at) return;
+      const s = at[0];
+      s.keys.push(it);
+      it.ownChars.forEach((c) => s.chars.add(c));
+      it.writers.concat(it.artists).forEach((c) => s.creators.add(c));
+    });
+    SERIES.forEach((s) => {
+      s.hay = [s.name, ...s.keys.map((k) => k.hay)].join(' ').toLowerCase();
+      const fam = s.pub === 'crossover' ? 'Marvel × DC' : (FAMILIES.find((f) => f[0] === s.pub && f[2].test(s.title)) || [])[1];
+      s.family = fam || (s.keys.length || !s.events.size ? (s.pub === 'dc' ? 'More DC' : 'More Marvel') : (s.pub === 'dc' ? 'DC events & minis' : 'Marvel events & minis'));
+    });
+  }
+  const seriesOf = (it) => (it && it.metron && ISSUE_AT.get(it.metron) ? ISSUE_AT.get(it.metron)[0] : null);
+
+  function seriesMatches(s) {
+    if (state.pub !== 'both' && s.pub !== state.pub && s.pub !== 'crossover') return false;
+    if (state.event) return s.events.has(state.event);
+    if (!state.svOneShots && s.issues.length < 2 && !s.keys.length && !state.q) return false;
+    if (state.char) {
+      const base = state.char.toLowerCase().replace(/\s*\(.*\)$/, '');
+      if (!s.chars.has(state.char) && !s.title.toLowerCase().includes(base)) return false;
+    }
+    if (state.creator && !s.creators.has(state.creator)) return false;
+    if (state.q) {
+      const words = state.q.toLowerCase().split(/\s+/).filter(Boolean);
+      if (!words.every((w) => s.hay.includes(w))) return false;
+    }
+    return true;
+  }
+
+  const LABEL_W = () => (stage.clientWidth < 640 ? 118 : 232);
+  const AXIS_H = 50;
+  const EV_ROW = 17;
+  const coverMode = () => state.ppy >= 300;
+  const thumbW = () => Math.min(48, (state.ppy / 12) * 0.9);
+  const rowH = () => (coverMode() ? Math.round(thumbW() * 1.5 + 12) : 24);
+
+  function computeSvRows() {
+    const list = SERIES.filter(seriesMatches);
+    const rows = [];
+    const rh = rowH();
+    let off = 0;
+    const push = (r, h) => { r.off = off; r.h = h; rows.push(r); off += h; };
+    if (state.svGroup === 'family') {
+      const groups = new Map();
+      list.forEach((s) => { if (!groups.has(s.family)) groups.set(s.family, []); groups.get(s.family).push(s); });
+      FAMILY_ORDER.forEach((name) => {
+        const g = groups.get(name);
+        if (!g) return;
+        push({ kind: 'group', label: name, n: g.length }, 34);
+        g.forEach((s) => push({ kind: 'series', s }, rh));
+      });
+    } else {
+      list.forEach((s) => push({ kind: 'series', s }, rh));
+    }
+    // Event bars along the top, packed into rows.
+    const evs = ITEMS.filter((it) => it.type === 'event' && inPub(it) && (!state.event || it.event === state.event));
+    const ends = [];
+    SV.evRows = evs.map((e) => {
+      const y1 = toYear(e.end || e.date) + 1 / 12;
+      const w = Math.max(4, (y1 - e.y) * state.ppy);
+      const need = Math.max(w, state.ppy >= 14 ? e.title.length * 5.6 + 10 : 0) + 4;
+      const x = X(e.y);
+      let r = ends.findIndex((end) => end <= x);
+      if (r < 0) { r = ends.length; ends.push(0); }
+      ends[r] = x + need;
+      return { e, r, x, w };
+    });
+    SV.headerH = AXIS_H + (ends.length ? ends.length * EV_ROW + 8 : 0);
+    SV.rows = rows;
+    SV.list = list;
+    SV.contentH = SV.headerH + off + 40;
+  }
+
+  function svColors() {
+    const c = {};
+    ['--bg', '--surface', '--raised', '--ink', '--muted', '--faint', '--line', '--stripe', '--marvel', '--dc', '--cross', '--t-first', '--t-launch', '--t-key', '--t-event', '--t-tiein', '--t-milestone', '--focus'].forEach((n) => { c[n.slice(2)] = cssVar(n); });
+    return c;
+  }
+
+  function renderSeries() {
+    if (!SERIES.length) {
+      stage.innerHTML = `<div class="empty-state"><h3>Series data isn't loaded</h3><p>Run <code>node tools/fetch-series.mjs</code> to build data/series.js.</p></div>`;
+      return;
+    }
+    computeSvRows();
+    let sp = stage.querySelector('.sv');
+    if (!sp) {
+      stage.innerHTML = '<div class="sv"><canvas class="sv-canvas" id="sv-canvas"></canvas></div>';
+      sp = stage.querySelector('.sv');
+    }
+    sp.style.width = canvasWidth() + 'px';
+    sp.style.height = Math.max(SV.contentH, stage.clientHeight) + 'px';
+    SV.colors = svColors();
+    drawSeries();
+  }
+  function scheduleSeriesDraw() {
+    if (SV.raf) return;
+    SV.raf = requestAnimationFrame(() => { SV.raf = 0; if (state.view === 'series') drawSeries(); });
+  }
+
+  function svImage(path) {
+    let rec = SV.imgs.get(path);
+    if (!rec) {
+      rec = { img: new Image(), ok: false };
+      rec.img.decoding = 'async';
+      rec.img.referrerPolicy = 'no-referrer';
+      rec.img.onload = () => { rec.ok = true; scheduleSeriesDraw(); };
+      rec.img.src = IMG_BASE + path;
+      SV.imgs.set(path, rec);
+    }
+    return rec;
+  }
+  function fitText(ctx, str, max) {
+    const k = ctx.font + '|' + max + '|' + str;
+    if (SV.fit.has(k)) return SV.fit.get(k);
+    let out = str;
+    if (ctx.measureText(str).width > max) {
+      let lo = 0, hi = str.length;
+      while (lo < hi) { const mid = (lo + hi + 1) >> 1; if (ctx.measureText(str.slice(0, mid) + '…').width <= max) lo = mid; else hi = mid - 1; }
+      out = str.slice(0, lo) + '…';
+    }
+    SV.fit.set(k, out);
+    return out;
+  }
+  const firstAtOrAfter = (arr, v) => { let lo = 0, hi = arr.length; while (lo < hi) { const m = (lo + hi) >> 1; if (arr[m] < v) lo = m + 1; else hi = m; } return lo; };
+
+  function drawSeries() {
+    const cv = $('#sv-canvas');
+    if (!cv) return;
+    const W = stage.clientWidth, H = stage.clientHeight;
+    const dpr = window.devicePixelRatio || 1;
+    if (cv.width !== Math.round(W * dpr) || cv.height !== Math.round(H * dpr)) {
+      cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+      cv.style.width = W + 'px'; cv.style.height = H + 'px';
+    }
+    const ctx = cv.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const C = SV.colors || (SV.colors = svColors());
+    const sl = stage.scrollLeft, st = stage.scrollTop;
+    const LW = LABEL_W();
+    const top = SV.headerH;
+    const sx = (y) => X(y) - sl;
+    const pubC = { marvel: C.marvel, dc: C.dc, crossover: C.cross };
+    const typeC = { first: C['t-first'], launch: C['t-launch'], key: C['t-key'], tiein: C['t-tiein'], event: C['t-event'], milestone: C['t-milestone'] };
+    const hlEvent = state.event || (SV.hover && SV.hover.kind === 'event' ? SV.hover.e.event : null);
+    const hlSet = hlEvent && T.arcs && T.arcs[hlEvent] ? new Set(T.arcs[hlEvent].issues) : null;
+    const yMin = (sl + LW - PADL) / state.ppy + MIN_YEAR - 0.1;
+    const yMax = (sl + W - PADL) / state.ppy + MIN_YEAR + 0.1;
+
+    ctx.fillStyle = C.bg;
+    ctx.fillRect(0, 0, W, H);
+
+    // Era stripes and decade lines
+    ERAS.forEach((e, i) => {
+      if (!(i % 2)) return;
+      ctx.fillStyle = C.stripe;
+      ctx.fillRect(sx(e.start), top, sx(e.end) - sx(e.start), H);
+    });
+    ctx.fillStyle = C.line;
+    for (let y = 1940; y < MAX_YEAR; y += state.ppy >= 55 ? 1 : 10) {
+      ctx.globalAlpha = y % 10 ? 0.25 : 0.6;
+      ctx.fillRect(Math.round(sx(y)), top, 1, H);
+    }
+    ctx.globalAlpha = 1;
+
+    // Shade the highlighted event's span
+    if (hlEvent) {
+      const ev = BYID['event-' + hlEvent];
+      if (ev) {
+        ctx.fillStyle = C['t-event'];
+        ctx.globalAlpha = 0.08;
+        ctx.fillRect(sx(ev.y), top, Math.max(3, (toYear(ev.end || ev.date) + 1 / 12 - ev.y) * state.ppy), H);
+        ctx.globalAlpha = 1;
+      }
+    }
+
+    // Rows
+    const cover = coverMode();
+    const monthPx = state.ppy / 12;
+    const tickW = Math.max(1.5, monthPx - (monthPx > 4 ? 1 : 0));
+    const tw = thumbW(), th = tw * 1.5;
+    const rows = SV.rows;
+    let i = Math.max(0, firstAtOrAfter(rows.map((r) => r.off + r.h), st) - 0);
+    for (; i < rows.length; i++) {
+      const r = rows[i];
+      const y = top + r.off - st;
+      if (y > H) break;
+      if (y + r.h < top) continue;
+      if (r.kind === 'group') {
+        ctx.fillStyle = C.bg;
+        ctx.fillRect(0, y, W, r.h);
+        ctx.fillStyle = C.line;
+        ctx.fillRect(0, y + r.h - 1, W, 1);
+        ctx.fillStyle = C.ink;
+        ctx.font = '17px Anton, Impact, sans-serif';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(r.label.toUpperCase(), 14, y + r.h / 2 + 1);
+        const lw = ctx.measureText(r.label.toUpperCase()).width;
+        ctx.font = '11px "JetBrains Mono", monospace';
+        ctx.fillStyle = C.faint;
+        ctx.fillText(`${r.n} series`, 14 + lw + 10, y + r.h / 2 + 1);
+        continue;
+      }
+      const s = r.s;
+      const isSel = SV.selSeries === s.id;
+      const isHover = SV.hover && SV.hover.s === s;
+      if (isSel || isHover) {
+        ctx.fillStyle = C.ink;
+        ctx.globalAlpha = isSel ? 0.07 : 0.04;
+        ctx.fillRect(LW, y, W - LW, r.h);
+        ctx.globalAlpha = 1;
+      }
+      const dim = hlSet && !s.events.has(hlEvent);
+      const pc = pubC[s.pub] || C.cross;
+      // Run line
+      ctx.fillStyle = pc;
+      ctx.globalAlpha = dim ? 0.12 : 0.35;
+      const mid = cover ? y + 6 + th / 2 : y + r.h / 2;
+      ctx.fillRect(sx(s.y0), mid - 1, Math.max(2, (s.y1 - s.y0) * state.ppy), 2);
+      ctx.globalAlpha = 1;
+      // Issues in view
+      const a = Math.max(0, firstAtOrAfter(s.ys, yMin - 1 / 12));
+      const b = firstAtOrAfter(s.ys, yMax);
+      for (let k = a; k < b; k++) {
+        const iss = s.issues[k];
+        const x = sx(s.ys[k]);
+        const key = KEY_AT.get(iss[0]);
+        const inArc = hlSet && hlSet.has(iss[0]);
+        const faded = hlSet && !inArc;
+        if (cover) {
+          const ix = x + (monthPx - tw) / 2, iy = y + 6;
+          ctx.globalAlpha = faded ? 0.18 : 1;
+          const rec = iss[3] ? svImage(iss[3]) : null;
+          if (rec && rec.ok) ctx.drawImage(rec.img, ix, iy, tw, th);
+          else { ctx.fillStyle = pc; ctx.fillRect(ix, iy, tw, th); }
+          if (key || inArc || (SV.sel === iss[0])) {
+            ctx.strokeStyle = SV.sel === iss[0] ? C.ink : inArc ? C['t-event'] : typeC[key.type] || C.ink;
+            ctx.lineWidth = SV.sel === iss[0] ? 3 : 2;
+            ctx.strokeRect(ix - 1, iy - 1, tw + 2, th + 2);
+          }
+          ctx.globalAlpha = 1;
+        } else {
+          const h = r.h - 10;
+          ctx.fillStyle = inArc ? C['t-event'] : key ? typeC[key.type] || C.ink : pc;
+          ctx.globalAlpha = faded ? 0.12 : inArc || key ? 1 : 0.62;
+          ctx.fillRect(x, y + (key ? 3 : 5), tickW, key ? h + 4 : h);
+          if (SV.sel === iss[0]) { ctx.globalAlpha = 1; ctx.strokeStyle = C.ink; ctx.lineWidth = 2; ctx.strokeRect(x - 2, y + 2, tickW + 4, r.h - 4); }
+          ctx.globalAlpha = 1;
+        }
+      }
+      // Sticky label
+      ctx.fillStyle = C.surface;
+      ctx.fillRect(0, y, LW, r.h);
+      ctx.fillStyle = pc;
+      ctx.fillRect(0, y + 3, 3, r.h - 6);
+      ctx.globalAlpha = dim ? 0.4 : 1;
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = C.ink;
+      ctx.font = `${isSel ? 700 : 600} 12px Archivo, sans-serif`;
+      const meta = `${s.years} · ${s.count}`;
+      ctx.font = '10px "JetBrains Mono", monospace';
+      const mw = ctx.measureText(meta).width;
+      ctx.font = `${isSel ? 700 : 600} 12px Archivo, sans-serif`;
+      if (cover || LW < 200) {
+        ctx.fillText(fitText(ctx, s.title, LW - 16), 10, y + r.h / 2 - 7);
+        ctx.font = '10px "JetBrains Mono", monospace';
+        ctx.fillStyle = C.muted;
+        ctx.fillText(fitText(ctx, meta, LW - 16), 10, y + r.h / 2 + 8);
+      } else {
+        ctx.fillText(fitText(ctx, s.title, LW - mw - 22), 10, y + r.h / 2 + 1);
+        ctx.font = '10px "JetBrains Mono", monospace';
+        ctx.fillStyle = C.muted;
+        ctx.fillText(meta, LW - mw - 8, y + r.h / 2 + 1);
+      }
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = C.line;
+      ctx.fillRect(0, y + r.h - 1, LW, 1);
+    }
+    ctx.fillStyle = C.line;
+    ctx.fillRect(LW, top, 1, H);
+
+    // Header: eras, years, events
+    ctx.fillStyle = C.bg;
+    ctx.fillRect(0, 0, W, top);
+    ctx.textBaseline = 'middle';
+    ERAS.forEach((e) => {
+      const l = Math.max(sx(e.start), LW + 4), r2 = sx(e.end);
+      if (r2 - l < 60) return;
+      ctx.fillStyle = C.ink;
+      ctx.fillRect(sx(e.start), 8, 2, 16);
+      ctx.font = '13px Anton, Impact, sans-serif';
+      ctx.fillStyle = C.muted;
+      ctx.fillText(fitText(ctx, e.name.toUpperCase(), r2 - l - 12), l + 8, 17);
+    });
+    const step = state.ppy >= 55 ? 1 : state.ppy >= 22 ? 5 : 10;
+    ctx.font = '11px "JetBrains Mono", monospace';
+    ctx.textAlign = 'center';
+    for (let y = Math.ceil(MIN_YEAR / step) * step; y < MAX_YEAR; y += step) {
+      const x = sx(y + (step === 1 ? 0.5 : 0));
+      if (x < LW + 14 || x > W) continue;
+      ctx.fillStyle = y % 10 === 0 ? C.ink : C.muted;
+      ctx.fillText(step === 1 && y % 10 && state.ppy < 90 ? `'${String(y).slice(2)}` : String(y), x, 38);
+    }
+    ctx.textAlign = 'left';
+    SV.evRows.forEach((b) => {
+      const x = b.x - sl, y = AXIS_H + 2 + b.r * EV_ROW;
+      if (x > W || x + b.w < LW) return;
+      const on = hlEvent === b.e.event;
+      ctx.fillStyle = b.e.publisher === 'dc' ? C.dc : b.e.publisher === 'marvel' ? C.marvel : C.cross;
+      ctx.globalAlpha = hlEvent && !on ? 0.35 : 1;
+      ctx.fillRect(x, y, b.w, 5);
+      ctx.fillStyle = C['t-event'];
+      ctx.fillRect(x, y + 2, b.w, 3);
+      if (state.ppy >= 14) {
+        ctx.font = `${on ? 700 : 600} 10px Archivo, sans-serif`;
+        ctx.fillStyle = C.ink;
+        ctx.fillText(b.e.title, Math.max(x, LW + 4), y + 11);
+      }
+      ctx.globalAlpha = 1;
+    });
+    ctx.fillStyle = C.line;
+    ctx.fillRect(0, top - 1, W, 1);
+    // Corner
+    ctx.fillStyle = C.surface;
+    ctx.fillRect(0, 0, LW, top);
+    ctx.fillStyle = C.line;
+    ctx.fillRect(LW, 0, 1, top);
+    ctx.font = '600 10px Archivo, sans-serif';
+    ctx.fillStyle = C.muted;
+    ctx.fillText('SERIES', 12, 17);
+    ctx.font = '11px "JetBrains Mono", monospace';
+    ctx.fillStyle = C.faint;
+    ctx.fillText(`${SV.list.length} · ${SV.list.reduce((n, s) => n + s.issues.length, 0).toLocaleString()} issues`, 12, 36);
+    if (SV.headerH > AXIS_H) {
+      ctx.font = '600 10px Archivo, sans-serif';
+      ctx.fillStyle = C.muted;
+      ctx.fillText('EVENTS', 12, AXIS_H + 10);
+    }
+  }
+
+  // What is under the pointer?
+  function svHit(clientX, clientY) {
+    const cv = $('#sv-canvas');
+    if (!cv) return null;
+    const box = cv.getBoundingClientRect();
+    const x = clientX - box.left, y = clientY - box.top;
+    const LW = LABEL_W();
+    if (y < SV.headerH) {
+      if (y < AXIS_H || x < LW) return null;
+      const r = Math.floor((y - AXIS_H - 2) / EV_ROW);
+      const px = x + stage.scrollLeft;
+      const b = SV.evRows.find((e) => e.r === r && px >= e.x - 2 && px <= e.x + Math.max(e.w, state.ppy >= 14 ? e.e.title.length * 5.6 : 0) + 2);
+      return b ? { kind: 'event', e: b.e } : null;
+    }
+    const cy = y - SV.headerH + stage.scrollTop;
+    const row = SV.rows.find((r) => cy >= r.off && cy < r.off + r.h);
+    if (!row || row.kind !== 'series') return null;
+    const s = row.s;
+    if (x < LW) return { kind: 'series', s };
+    const yr = yearAt(x + stage.scrollLeft);
+    const monthPx = state.ppy / 12;
+    let k = firstAtOrAfter(s.ys, yr - 1 / 12);
+    let best = -1, bd = Infinity;
+    for (let j = Math.max(0, k - 2); j < Math.min(s.ys.length, k + 3); j++) {
+      const cx = X(s.ys[j]) + monthPx / 2;
+      const d = Math.abs(cx - (x + stage.scrollLeft));
+      if (d < bd) { bd = d; best = j; }
+    }
+    if (best >= 0 && bd <= Math.max(monthPx / 2 + 2, 5)) return { kind: 'issue', s, idx: best };
+    return { kind: 'row', s };
+  }
+
+  function svTip(hit, e) {
+    if (!hit || hit.kind === 'row') { hideTip(); return; }
+    let html;
+    if (hit.kind === 'event') html = `<b>${esc(hit.e.title)}</b><span>${esc(fmtRange(hit.e.date, hit.e.end))}</span><br>Click to light up every tie-in`;
+    else if (hit.kind === 'series') html = `<b>${esc(hit.s.name)}</b><span>${esc(hit.s.years)} · ${hit.s.count} issues</span>`;
+    else {
+      const iss = hit.s.issues[hit.idx];
+      const key = KEY_AT.get(iss[0]);
+      const evs = (ARCS_OF.get(iss[0]) || []).map((id) => BYID['event-' + id]).filter(Boolean);
+      html = `<b>${esc(hit.s.title)} #${esc(iss[1])}</b><span>${esc(fmtDate(iss[2]))}</span>${key ? `<br>★ ${esc(TYPES[key.type].short)}` : ''}${evs.length ? `<br>${esc(evs.map((e) => e.title).join(', '))}` : ''}`;
+    }
+    tip.innerHTML = html;
+    tip.hidden = false;
+    moveTip(e);
+  }
+
+  function issueCoverHtml(s, iss, cls = '') {
+    return `<span class="cv ${cls}" style="--h:${hash(s.title) % 360}"><span class="cv-brand">${esc(PUBS[s.pub] ? PUBS[s.pub].brand : '')}</span><span class="cv-title">${esc(s.title)}</span><span class="cv-num">#${esc(iss[1])}</span>${iss[3] ? `<img src="${esc(IMG_BASE + iss[3])}" alt="" loading="lazy" referrerpolicy="no-referrer">` : ''}</span>`;
+  }
+
+  function openIssue(s, idx) {
+    const iss = s.issues[idx];
+    SV.sel = iss[0];
+    SV.selSeries = s.id;
+    const key = KEY_AT.get(iss[0]);
+    if (key) { openItem(key.id); scheduleSeriesDraw(); return; }
+    const evs = (ARCS_OF.get(iss[0]) || []).map((id) => BYID['event-' + id]).filter(Boolean);
+    let h = `<div class="d-hero"><span class="pub-${s.pub}">${issueCoverHtml(s, iss)}</span>
+      <div class="d-meta"><div class="badges">${badge(PUBS[s.pub].label, pubColor(s.pub))}${evs.length ? badge('Tie-in', 'var(--t-tiein)', 't-tiein') : ''}</div>
+      <h2 class="d-title">${esc(s.title)} #${esc(iss[1])}</h2><div class="d-date">${esc(fmtDate(iss[2]))} cover date</div></div></div>`;
+    h += seriesLinkHtml(s, idx);
+    if (evs.length) h += `<div class="d-sec"><h3>Part of</h3>${evs.map((ev) => `<button type="button" class="ev-link" data-open="${esc(ev.id)}"><span class="sw"></span><span><b>${esc(ev.title)}</b><span>${esc(fmtRange(ev.date, ev.end))}</span></span></button>`).join('')}</div>`;
+    h += issueNavHtml(s, idx);
+    const lookup = encodeURIComponent(`${s.name} #${iss[1]} comic`);
+    h += `<p class="d-note">Issue data and covers from <a href="https://metron.cloud" target="_blank" rel="noopener">Metron</a> · <a href="https://www.google.com/search?q=${lookup}" target="_blank" rel="noopener">web search</a></p>`;
+    showDrawer(h);
+    scheduleSeriesDraw();
+  }
+  function seriesLinkHtml(s, idx) {
+    return `<div class="d-sec"><h3>Series</h3><button type="button" class="ev-link" data-series="${s.id}"><span class="sw" style="background:${pubColor(s.pub)}"></span><span><b>${esc(s.name)}</b><span>${esc(s.years)} · ${s.count} issues${idx != null ? ` · issue ${idx + 1} of ${s.issues.length}` : ''}</span></span></button></div>`;
+  }
+  function issueNavHtml(s, idx) {
+    const prev = idx > 0 ? `<button type="button" class="btn ghost" data-issue="${s.id}:${idx - 1}">← #${esc(s.issues[idx - 1][1])}</button>` : '';
+    const next = idx < s.issues.length - 1 ? `<button type="button" class="btn ghost" data-issue="${s.id}:${idx + 1}">#${esc(s.issues[idx + 1][1])} →</button>` : '';
+    return prev || next ? `<div class="d-actions">${prev}${next}</div>` : '';
+  }
+
+  function openSeries(s) {
+    SV.selSeries = s.id;
+    SV.sel = null;
+    const evs = [...s.events].map((id) => BYID['event-' + id]).filter(Boolean).sort((a, b) => a.y - b.y);
+    let h = `<div class="d-hero"><span class="pub-${s.pub}">${issueCoverHtml(s, s.issues[0])}</span>
+      <div class="d-meta"><div class="badges">${badge(PUBS[s.pub].label, pubColor(s.pub))}${s.type ? badge(s.type, 'var(--muted)') : ''}</div>
+      <h2 class="d-title">${esc(s.title)}</h2><div class="d-date">${esc(s.years)} · ${s.count} issues${s.issues.length < s.count ? ` (${s.issues.length} dated)` : ''}</div>
+      <div class="d-date">${esc(s.family)}</div></div></div>`;
+    if (s.keys.length) {
+      h += `<div class="d-sec"><h3>Key moments</h3><ol class="reading">${s.keys.slice().sort((a, b) => a.y - b.y).map((k) => `<li><button type="button" data-open="${esc(k.id)}"><span class="rd">${esc(fmtDate(k.date))}</span><span>${esc(label(k))}<span class="rk">${esc(TYPES[k.type].short)}</span></span></button></li>`).join('')}</ol></div>`;
+    }
+    if (evs.length) h += `<div class="d-sec"><h3>Tied into ${evs.length} event${evs.length === 1 ? '' : 's'}</h3>${evs.map((ev) => `<button type="button" class="ev-link" data-open="${esc(ev.id)}"><span class="sw"></span><span><b>${esc(ev.title)}</b><span>${esc(fmtRange(ev.date, ev.end))}</span></span></button>`).join('')}</div>`;
+    h += `<div class="d-sec"><h3>Every issue</h3><div class="issue-grid">${s.issues.map((iss, i) => {
+      const key = KEY_AT.get(iss[0]);
+      const tie = ARCS_OF.has(iss[0]);
+      return `<button type="button" class="ig${key ? ' key t-' + key.type : ''}${tie ? ' tie' : ''}" data-issue="${s.id}:${i}" title="${esc(s.title)} #${esc(iss[1])} · ${esc(fmtDate(iss[2]))}">${iss[3] ? `<img src="${esc(IMG_BASE + iss[3])}" alt="" loading="lazy" referrerpolicy="no-referrer">` : ''}<span>#${esc(iss[1])}</span><i>${esc(fmtDate(iss[2]))}</i></button>`;
+    }).join('')}</div></div>`;
+    h += `<p class="d-note">Purple outline: part of an event. Gold, green or white outline: a key moment on the timeline. Data from <a href="https://metron.cloud" target="_blank" rel="noopener">Metron</a>.</p>`;
+    showDrawer(h);
+    scheduleSeriesDraw();
+  }
+  function showDrawer(h) {
+    hideTip();
+    drawerBody.innerHTML = h;
+    drawer.hidden = false;
+    drawer.scrollTop = 0;
+  }
+
+  // Jump to a series' row in the series view and open it.
+  function showSeries(id) {
+    const s = SERIES_BY_ID.get(+id);
+    if (!s) return;
+    if (state.view !== 'series') { state.view = 'series'; refresh(); }
+    if (!SV.list.includes(s)) { clearAll(); }
+    const row = SV.rows.find((r) => r.s === s);
+    openSeries(s);
+    if (row) stage.scrollTo({ top: Math.max(0, row.off - 80), left: Math.max(0, X(s.y0) - LABEL_W() - 60), behavior: 'smooth' });
+  }
+
   // ── Events ───────────────────────────────────────────────────────
   function setFilter(key, val) {
     state[key] = state[key] === val ? null : val;
@@ -833,11 +1395,23 @@
     }
     if (t.dataset.pub) { state.pub = t.dataset.pub; refresh({ stats: true }); return; }
     if (t.dataset.view) {
+      const was = state.view;
+      const midYear = timeView() ? yearAt(stage.scrollLeft + stage.clientWidth / 2) : 1962;
       state.view = t.dataset.view;
+      if (state.view !== 'series') { SV.sel = null; SV.selSeries = null; }
       refresh();
-      if (state.view === 'timeline' && !state.char && !state.event) stage.scrollLeft = X(1938) - 40;
+      if (timeView() && was !== state.view) { stage.scrollTop = 0; stage.scrollLeft = X(midYear) - stage.clientWidth / 2; }
       return;
     }
+    if (t.dataset.series) { showSeries(t.dataset.series); return; }
+    if (t.dataset.issue) {
+      const [sid, idx] = t.dataset.issue.split(':');
+      const s = SERIES_BY_ID.get(+sid);
+      if (s) openIssue(s, +idx);
+      return;
+    }
+    if (t.dataset.svgroup) { state.svGroup = t.dataset.svgroup; refresh(); return; }
+    if (t.id === 'sv-oneshots') { state.svOneShots = !state.svOneShots; refresh(); return; }
     if (t.dataset.type && t.classList.contains('chip')) {
       const k = t.dataset.type;
       if (state.types.has(k)) state.types.delete(k); else state.types.add(k);
@@ -875,6 +1449,11 @@
       case 'revert': revert(t.dataset.id); break;
       case 'delete': removeAdded(t.dataset.id); break;
       case 'locate': locate(t.dataset.id); break;
+      case 'series-event':
+        state.event = t.dataset.eventId;
+        state.view = 'series';
+        refresh({ jump: true });
+        break;
       case 'copy-export': copyExport(); break;
       case 'import': importEdits(); break;
       case 'clear-all': clearAll(); break;
@@ -934,7 +1513,7 @@
   // Wheel: scroll moves through time, ctrl/⌘ zooms, shift scrolls lanes.
   let wheelZoom = 0, wheelX = 0, wheelRaf = 0;
   stage.addEventListener('wheel', (e) => {
-    if (state.view !== 'timeline') return;
+    if (!timeView()) return;
     if (e.ctrlKey || e.metaKey) {
       e.preventDefault();
       wheelZoom += e.deltaY;
@@ -943,6 +1522,11 @@
         setZoom(state.ppy * Math.exp(-wheelZoom * 0.0025), wheelX);
         wheelZoom = 0; wheelRaf = 0;
       });
+      return;
+    }
+    // The series view scrolls down through rows; the timeline scrolls through time.
+    if (state.view === 'series') {
+      if (e.shiftKey && Math.abs(e.deltaY) > Math.abs(e.deltaX)) { e.preventDefault(); stage.scrollLeft += e.deltaY; }
       return;
     }
     if (e.shiftKey) { e.preventDefault(); stage.scrollTop += e.deltaY || e.deltaX; return; }
@@ -956,7 +1540,7 @@
   // Drag to pan with a mouse (touch already scrolls natively).
   let drag = null, dragMoved = false;
   stage.addEventListener('pointerdown', (e) => {
-    if (state.view !== 'timeline' || e.pointerType !== 'mouse' || e.button !== 0) return;
+    if (!timeView() || e.pointerType !== 'mouse' || e.button !== 0) return;
     drag = { x: e.clientX, y: e.clientY, l: stage.scrollLeft, t: stage.scrollTop };
     dragMoved = false;
   });
@@ -975,7 +1559,7 @@
 
   // Keyboard
   stage.addEventListener('keydown', (e) => {
-    if (state.view !== 'timeline') return;
+    if (!timeView()) return;
     const step = stage.clientWidth * 0.35;
     if (e.key === 'ArrowRight') { e.preventDefault(); stage.scrollBy({ left: step, behavior: 'smooth' }); }
     else if (e.key === 'ArrowLeft') { e.preventDefault(); stage.scrollBy({ left: -step, behavior: 'smooth' }); }
@@ -996,7 +1580,32 @@
   });
   stage.addEventListener('pointermove', (e) => moveTip(e));
   stage.addEventListener('pointerleave', hideTip);
-  stage.addEventListener('scroll', () => { updateWindow(); hideTip(); }, { passive: true });
+  stage.addEventListener('scroll', () => { updateWindow(); hideTip(); if (state.view === 'series') scheduleSeriesDraw(); }, { passive: true });
+
+  // Series view: hover and click on the canvas
+  stage.addEventListener('pointermove', (e) => {
+    if (state.view !== 'series' || drag && dragMoved) return;
+    const hit = svHit(e.clientX, e.clientY);
+    const prev = SV.hover;
+    SV.hover = hit;
+    const changed = (prev && prev.kind) !== (hit && hit.kind) || (prev && prev.s) !== (hit && hit.s) || (prev && prev.e) !== (hit && hit.e);
+    if (changed) scheduleSeriesDraw();
+    stage.style.cursor = hit && hit.kind !== 'row' ? 'pointer' : '';
+    svTip(hit, e);
+  });
+  stage.addEventListener('pointerleave', () => { if (state.view === 'series' && SV.hover) { SV.hover = null; scheduleSeriesDraw(); } });
+  stage.addEventListener('click', (e) => {
+    if (state.view !== 'series' || dragMoved || e.target.id !== 'sv-canvas') return;
+    const hit = svHit(e.clientX, e.clientY);
+    if (!hit) return;
+    if (hit.kind === 'event') {
+      const was = state.event;
+      state.event = was === hit.e.event ? null : hit.e.event;
+      refresh();
+      if (state.event) openItem(hit.e.id);
+    } else if (hit.kind === 'issue') openIssue(hit.s, hit.idx);
+    else openSeries(hit.s);
+  });
 
   // Minimap
   const mm = $('#minimap');
@@ -1011,11 +1620,15 @@
   const onResize = () => {
     clearTimeout(rTimer);
     rTimer = setTimeout(() => {
-      if (state.view === 'timeline') {
+      if (timeView()) {
+        const prev = PADL;
+        setPadl();
+        if (prev !== PADL) renderTime();
         const min = fitPpy();
         if (state.ppy < min) setZoom(min);
         else zoomInput.value = ppyToSlider(state.ppy);
       }
+      if (state.view === 'series') renderSeries();
       drawMinimap();
     }, 120);
   };
@@ -1028,10 +1641,11 @@
   new MutationObserver(drawMinimap).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 
   // ── Boot ─────────────────────────────────────────────────────────
+  buildSeries();
   buildData();
   computeStats();
   refresh();
   if (!saved.ppy) setZoom(Math.max(fitPpy(), 12), 0);
-  if (state.view === 'timeline') stage.scrollLeft = saved.ppy ? X(1938) - 40 : 0;
+  if (timeView()) stage.scrollLeft = saved.ppy ? X(1938) - 40 : 0;
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(drawMinimap);
 })();
