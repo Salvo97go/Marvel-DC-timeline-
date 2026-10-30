@@ -113,6 +113,7 @@
       ['characters', 'writers', 'artists'].forEach((k) => { it[k] = list(it[k]); });
       it.y = toYear(it.date);
       it.ownChars = it.characters.slice();
+      if (!it.cover && T.covers) it.cover = T.covers[coverKey(it)] || '';
     });
 
     BYID = {};
@@ -140,6 +141,8 @@
     ((T.roles && T.roles.villain) || []).forEach((n) => { ROLE[n] = 'villain'; });
   }
 
+  // Must match keyOf() in tools/fetch-covers.mjs.
+  function coverKey(it) { return [it.publisher, it.title, it.issue || '', it.date].join('|'); }
   function eventOf(it) { return it && it.event ? BYID['event-' + it.event] : null; }
   function eventParts(evItem) {
     return ITEMS.filter((i) => i.event === evItem.event && i.id !== evItem.id);
