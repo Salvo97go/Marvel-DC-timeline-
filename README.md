@@ -2,6 +2,8 @@
 
 An interactive timeline of Marvel and DC comics from 1935 to today: first appearances, series launches, landmark stories, crossover events and their tie-ins, and the industry history that ties them together.
 
+Also in this repo: [**By George**](george/), the same kind of timeline for JFK Jr.'s *George* magazine (1995–2001).
+
 ## Running it
 
 No build step. Open `index.html` in a browser, or serve the folder (for example `python3 -m http.server`) and visit it. It also works on GitHub Pages as-is.
