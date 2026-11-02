@@ -61,4 +61,4 @@ This looks up each issue and writes the links to `data/covers.js`. It takes abou
 
 ## Full series and event reading orders
 
-`tools/fetch-series.mjs` builds `data/series.js` from Metron: the complete issue list of every series on the timeline and of every series that tied into an event, plus each event's reading order. It makes about 1,700 requests (an hour at Metron's rate limit), caches progress in `tools/.cache/`, and can be stopped and resumed. Run it the same way as the cover import.
+`tools/fetch-series.mjs` builds `data/series.js` from Metron: the complete issue list of every series on the timeline and of every series that tied into an event, plus each event's reading order. It makes about 1,700 requests (an hour at Metron's rate limit), caches progress in `tools/metron-cache.json.gz`, and can be stopped and resumed. Run it the same way as the cover import.

@@ -8,16 +8,19 @@
  *
  *   node tools/fetch-series.mjs            (see fetch-covers.mjs for the login)
  *
- * Progress is cached in tools/.cache/metron.json, so the run can be stopped
- * and resumed. Delete that file to start over.
+ * Progress is cached in tools/metron-cache.json.gz (committed, so any
+ * checkout can resume). The run can be stopped and resumed; delete the
+ * file to start over.
  */
 import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
+import zlib from 'node:zlib';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const CACHE = path.join(ROOT, 'tools', '.cache', 'metron.json');
+const CACHE = path.join(ROOT, 'tools', 'metron-cache.json.gz');
+const OLD_CACHE = path.join(ROOT, 'tools', '.cache', 'metron.json');
 const OUT = path.join(ROOT, 'data', 'series.js');
 const BASE = (process.env.METRON_BASE || 'https://metron.cloud/api').replace(/\/$/, '');
 const DELAY_MS = +(process.env.METRON_DELAY_MS || 2100);
@@ -53,8 +56,8 @@ for (const f of ['marvel', 'dc', 'events', 'crossovers']) {
 }
 const T = sandbox.window.TIMELINE;
 
-fs.mkdirSync(path.dirname(CACHE), { recursive: true });
-const cache = fs.existsSync(CACHE) ? JSON.parse(fs.readFileSync(CACHE, 'utf8')) : {};
+const cache = fs.existsSync(CACHE) ? JSON.parse(zlib.gunzipSync(fs.readFileSync(CACHE)).toString('utf8'))
+  : fs.existsSync(OLD_CACHE) ? JSON.parse(fs.readFileSync(OLD_CACHE, 'utf8')) : {};
 for (const k of ['catalog', 'catalogDone', 'core', 'arcs', 'lists', 'heroes', 'extra', 'creators', 'detail']) cache[k] = cache[k] || {};
 
 // Characters whose every appearance is pulled in, and the creators whose
@@ -77,9 +80,15 @@ const CREATORS = [
   'Ryan Ottley', 'Zeb Wells', 'Jonathan Hickman', 'Marco Checchetto'
 ];
 // Metron's spelling, where it differs from the name used in the app.
-const CREATOR_SEARCH = { "Denny O'Neil": ["Dennis O'Neil", "Denny O'Neil"], 'J.M. DeMatteis': ['J.M. DeMatteis', 'J. M. DeMatteis'], 'Marcos Martín': ['Marcos Martin'], 'Mikel Janín': ['Mikel Janin'], 'Jorge Jiménez': ['Jorge Jimenez'] };
+const CREATOR_SEARCH = { "Denny O'Neil": ["Dennis O'Neil", "Denny O'Neil"], 'J.M. DeMatteis': ['J.M. DeMatteis', 'J. M. DeMatteis'], 'Marcos Martín': ['Marcos Martin'], 'Mikel Janín': ['Mikel Janin'], 'Tony S. Daniel': ['Tony Daniel'], 'Jorge Jiménez': ['Jorge Jimenez'] };
 const COLLECTED = /trade|hard ?cover|omnibus|digest|compendium|reprint/i;
-const saveCache = () => fs.writeFileSync(CACHE, JSON.stringify(cache));
+// Written often during a run; compression keeps the committed file small.
+let lastSave = 0;
+const saveCache = (force) => {
+  if (!force && Date.now() - lastSave < 30000) return;
+  lastSave = Date.now();
+  fs.writeFileSync(CACHE, zlib.gzipSync(JSON.stringify(cache)));
+};
 
 const headers = { Accept: 'application/json', 'User-Agent': 'LongboxTimeline/1.0' };
 if (USER && PASS) headers.Authorization = 'Basic ' + Buffer.from(`${USER}:${PASS}`).toString('base64');
@@ -97,6 +106,10 @@ async function get(url, tries = 0) {
   await sleep(DELAY_MS);
   if (res.status === 429 && tries < 6) {
     const wait = (+res.headers.get('retry-after') || 60) * 1000;
+    if (wait > 15 * 60 * 1000) {
+      const at = new Date(Date.now() + wait).toISOString().slice(0, 16).replace('T', ' ');
+      throw new Error(`Metron's daily request limit is used up. Progress is saved; run again after ${at} UTC.`);
+    }
     console.log(`  rate limited, waiting ${Math.round(wait / 1000)}s`);
     await sleep(wait);
     return get(url, tries + 1);
@@ -382,7 +395,7 @@ window.TIMELINE.credits = ${JSON.stringify(credits)};
 
 const only = process.argv[2];
 try {
-  if (only === 'write') { write(); process.exit(0); }
+  if (only === 'write') { saveCache(true); write(); process.exit(0); }
   await catalog();
   await core();
   await arcs();
@@ -391,10 +404,12 @@ try {
   write();
   await creators();
   await roles(+(process.env.ROLE_LIMIT || 4000));
+  saveCache(true);
   write();
   console.log(`Done (${requests} requests).`);
 } catch (e) {
-  saveCache();
+  saveCache(true);
+  write();
   console.error(e.message);
   process.exit(1);
 }
