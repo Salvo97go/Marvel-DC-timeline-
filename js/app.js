@@ -938,7 +938,13 @@
     });
     Object.entries(T.chars || {}).forEach(([hero, ids]) => {
       HERO_SETS.set(hero, new Set(ids));
-      ids.forEach((id) => { const at = ISSUE_AT.get(id); if (at) at[0].heroChars.add(hero); });
+      ids.forEach((id) => {
+        const at = ISSUE_AT.get(id);
+        if (!at) return;
+        at[0].heroChars.add(hero);
+        at[0].heroN = at[0].heroN || {};
+        at[0].heroN[hero] = (at[0].heroN[hero] || 0) + 1;
+      });
     });
     Object.entries(T.credits || {}).forEach(([name, kinds]) => {
       const all = new Set(), main = new Set(), cover = new Set();
@@ -1018,7 +1024,13 @@
     if (state.svGroup === 'family') {
       const groups = new Map();
       list.forEach((s) => { if (!groups.has(s.family)) groups.set(s.family, []); groups.get(s.family).push(s); });
-      FAMILY_ORDER.forEach((name) => {
+      // Following a hero: their own franchise first, then wherever else they turn up most.
+      let order = FAMILY_ORDER;
+      if (state.char && HERO_SETS.has(state.char)) {
+        const n = (name) => (groups.get(name) || []).reduce((a, s) => a + ((s.heroN || {})[state.char] || 0), 0);
+        order = FAMILY_ORDER.slice().sort((a, b) => n(b) - n(a));
+      }
+      order.forEach((name) => {
         const g = groups.get(name);
         if (!g) return;
         push({ kind: 'group', label: name, n: g.length }, 34);
