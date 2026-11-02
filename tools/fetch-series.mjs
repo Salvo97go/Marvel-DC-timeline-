@@ -55,7 +55,30 @@ const T = sandbox.window.TIMELINE;
 
 fs.mkdirSync(path.dirname(CACHE), { recursive: true });
 const cache = fs.existsSync(CACHE) ? JSON.parse(fs.readFileSync(CACHE, 'utf8')) : {};
-for (const k of ['catalog', 'catalogDone', 'core', 'arcs', 'lists']) cache[k] = cache[k] || {};
+for (const k of ['catalog', 'catalogDone', 'core', 'arcs', 'lists', 'heroes', 'extra', 'creators', 'detail']) cache[k] = cache[k] || {};
+
+// Characters whose every appearance is pulled in, and the creators whose
+// credits are tracked. Names must match Metron's.
+const HEROES = ['Batman', 'Spider-Man'];
+const CREATORS = [
+  // Batman
+  'Bob Kane', 'Bill Finger', 'Jerry Robinson', 'Dick Sprang', 'Sheldon Moldoff', 'Carmine Infantino', 'Gardner Fox',
+  'Neal Adams', "Denny O'Neil", 'Frank Robbins', 'Irv Novick', 'Dick Giordano', 'Jim Aparo', 'Bob Haney', 'Steve Englehart',
+  'Marshall Rogers', 'Len Wein', 'Gene Colan', 'Don Newton', 'Doug Moench', 'Gerry Conway', 'Frank Miller', 'Klaus Janson',
+  'David Mazzucchelli', 'Alan Moore', 'Brian Bolland', 'Jim Starlin', 'Max Allan Collins', 'Alan Grant', 'Norm Breyfogle',
+  'Chuck Dixon', 'Graham Nolan', 'Kelley Jones', 'Mike W. Barr', 'Jeph Loeb', 'Tim Sale', 'Jim Lee', 'Paul Dini', 'Bruce Timm',
+  'Ed Brubaker', 'Greg Rucka', 'Grant Morrison', 'Andy Kubert', 'Frank Quitely', 'Tony S. Daniel', 'Scott Snyder', 'Greg Capullo',
+  'Tom King', 'Mikel Janín', 'James Tynion IV', 'Jorge Jiménez', 'Chip Zdarsky', 'Nick Dragotta',
+  // Spider-Man
+  'Stan Lee', 'Steve Ditko', 'John Romita Sr.', 'Gil Kane', 'Ross Andru', 'Marv Wolfman', 'Keith Pollard', 'Bill Mantlo',
+  'Roger Stern', 'John Romita Jr.', 'Tom DeFalco', 'Ron Frenz', 'Sal Buscema', 'Peter David', 'J.M. DeMatteis', 'Mike Zeck',
+  'David Michelinie', 'Todd McFarlane', 'Erik Larsen', 'Mark Bagley', 'Howard Mackie', 'Paul Jenkins', 'J. Michael Straczynski',
+  'Mike Deodato', 'Dan Slott', 'Humberto Ramos', 'Marcos Martín', 'Brian Michael Bendis', 'Sara Pichelli', 'Nick Spencer',
+  'Ryan Ottley', 'Zeb Wells', 'Jonathan Hickman', 'Marco Checchetto'
+];
+// Metron's spelling, where it differs from the name used in the app.
+const CREATOR_SEARCH = { "Denny O'Neil": ["Dennis O'Neil", "Denny O'Neil"], 'J.M. DeMatteis': ['J.M. DeMatteis', 'J. M. DeMatteis'], 'Marcos Martín': ['Marcos Martin'], 'Mikel Janín': ['Mikel Janin'], 'Jorge Jiménez': ['Jorge Jimenez'] };
+const COLLECTED = /trade|hard ?cover|omnibus|digest|compendium|reprint/i;
 const saveCache = () => fs.writeFileSync(CACHE, JSON.stringify(cache));
 
 const headers = { Accept: 'application/json', 'User-Agent': 'LongboxTimeline/1.0' };
@@ -203,11 +226,77 @@ async function coreSeriesArc(ev) {
   return { arc: null, name: `${ev.name} (core series)`, issues };
 }
 
+// ── 3b. Every appearance of each hero, and the series they're regulars in
+async function heroes() {
+  for (const hero of HEROES) {
+    if (cache.heroes[hero]) continue;
+    const found = await getAll('/character/' + qs({ name: hero }));
+    const ch = found.find((c) => norm(c.name) === norm(hero));
+    if (!ch) { console.log(`  – no character "${hero}"`); continue; }
+    console.log(`Listing every ${hero} appearance…`);
+    const issues = await getAll(`/character/${ch.id}/issue_list/`);
+    cache.heroes[hero] = { id: ch.id, issues: issues.map((i) => [i.id, i.series.id, i.series.name, i.series.year_began]) };
+    console.log(`  ${issues.length} appearances`);
+    saveCache();
+  }
+  // A series joins when the hero is in at least 3 of its issues, or half of them.
+  for (const hero of HEROES) {
+    const h = cache.heroes[hero];
+    if (!h) continue;
+    const per = new Map();
+    h.issues.forEach(([, sid]) => per.set(sid, (per.get(sid) || 0) + 1));
+    let n = 0;
+    per.forEach((count, sid) => {
+      const c = cache.catalog[sid];
+      if (!c || COLLECTED.test(c.type || '') || COLLECTED.test(c.name || '')) return;
+      if (count >= 3 || count / Math.max(1, c.count || 1) >= 0.5) { if (!cache.extra[sid]) n++; cache.extra[sid] = true; }
+    });
+    console.log(`  ${hero}: ${n} new series to add`);
+  }
+  saveCache();
+}
+
+// ── 3c. Credits for key creators
+async function creators() {
+  for (const name of CREATORS) {
+    if (cache.creators[name]) continue;
+    let cr = null;
+    for (const term of [name, ...(CREATOR_SEARCH[name] || [])]) {
+      const found = await getAll('/creator/' + qs({ name: term }));
+      cr = found.find((c) => norm(c.name) === norm(term)) || (found.length === 1 ? found[0] : null);
+      if (cr) break;
+    }
+    if (!cr) { console.log(`  – no creator "${name}"`); cache.creators[name] = { id: null, issues: [] }; saveCache(); continue; }
+    const issues = await getAll('/issue/' + qs({ creator_id: cr.id }));
+    cache.creators[name] = { id: cr.id, issues: issues.map((i) => i.id) };
+    console.log(`  ${name}: ${issues.length} credits`);
+    saveCache();
+  }
+}
+
+// ── 3d. Exact roles for key creators' issues featuring the heroes
+async function roles(limit) {
+  const heroIds = new Set();
+  Object.values(cache.heroes).forEach((h) => h && h.issues.forEach((i) => heroIds.add(i[0])));
+  const want = new Set();
+  Object.values(cache.creators).forEach((c) => c.issues.forEach((id) => { if (heroIds.has(id) && !cache.detail[id]) want.add(id); }));
+  const todo = [...want].slice(0, limit);
+  console.log(`Fetching credits for ${todo.length} of ${want.size} issues…`);
+  let n = 0;
+  for (const id of todo) {
+    const d = await get(`/issue/${id}/`);
+    cache.detail[id] = (d.credits || []).map((c) => [c.creator, (c.role || []).map((r) => r.name).join('/')]);
+    if (++n % 50 === 0) { console.log(`  ${n}/${todo.length}`); saveCache(); }
+  }
+  saveCache();
+}
+
 // ── 4. Full issue lists ──────────────────────────────────────────────
 async function lists() {
   const ids = new Set();
   Object.values(cache.core).forEach((c) => c && ids.add(c.series));
   Object.values(cache.arcs).forEach((a) => a && a.issues.forEach((i) => ids.add(i.s)));
+  Object.keys(cache.extra).forEach((id) => ids.add(+id));
   const todo = [...ids].filter((id) => !cache.lists[id]);
   console.log(`Fetching full issue lists for ${todo.length} series (${ids.size} total)…`);
   let n = 0;
@@ -244,6 +333,29 @@ function write() {
   const links = {};
   Object.entries(cache.core).forEach(([k, v]) => { if (v) links[k] = v.issue; });
 
+  // Appearances and credits, limited to issues that are in the file.
+  const inFile = new Set();
+  series.forEach((s) => s.issues.forEach((i) => inFile.add(i[0])));
+  const chars = {};
+  Object.entries(cache.heroes).forEach(([hero, h]) => { if (h) chars[hero] = h.issues.map((i) => i[0]).filter((id) => inFile.has(id)); });
+  const credits = {};
+  const kind = (role) => (/writer|plot|script|story/i.test(role) ? 'w' : /pencil|artist|ink|breakdown|layout|finish/i.test(role) ? 'a' : /cover/i.test(role) ? 'c' : null);
+  Object.entries(cache.creators).forEach(([name, c]) => {
+    const out = { w: [], a: [], c: [], x: [] };
+    c.issues.forEach((id) => {
+      if (!inFile.has(id)) return;
+      const det = cache.detail[id];
+      if (!det) { out.x.push(id); return; }
+      const mine = det.filter(([who]) => norm(who) === norm(name)).map(([, r]) => r).join('/');
+      const kinds = new Set(mine.split('/').map(kind).filter(Boolean));
+      if (kinds.has('w')) out.w.push(id);
+      if (kinds.has('a')) out.a.push(id);
+      if (!kinds.has('w') && !kinds.has('a')) out.c.push(id);
+    });
+    Object.keys(out).forEach((k) => { if (!out[k].length) delete out[k]; });
+    if (Object.keys(out).length) credits[name] = out;
+  });
+
   const lines = series.map((s) => '  ' + JSON.stringify(s));
   fs.writeFileSync(OUT, `/*
  * Full series runs and event reading orders from the Metron comic database
@@ -259,6 +371,10 @@ ${lines.join(',\n')}
 ];
 window.TIMELINE.arcs = ${JSON.stringify(arcsOut)};
 window.TIMELINE.links = ${JSON.stringify(links)};
+// Every appearance of each hero (issue ids).
+window.TIMELINE.chars = ${JSON.stringify(chars)};
+// Key creators' credits: w = writer, a = art, c = cover only, x = role not checked yet.
+window.TIMELINE.credits = ${JSON.stringify(credits)};
 `);
   const total = series.reduce((a, s) => a + s.issues.length, 0);
   console.log(`Wrote ${series.length} series, ${total} issues, ${Object.keys(arcsOut).length} event reading orders to data/series.js`);
@@ -270,7 +386,11 @@ try {
   await catalog();
   await core();
   await arcs();
+  await heroes();
   await lists();
+  write();
+  await creators();
+  await roles(+(process.env.ROLE_LIMIT || 4000));
   write();
   console.log(`Done (${requests} requests).`);
 } catch (e) {

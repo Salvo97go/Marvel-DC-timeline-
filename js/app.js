@@ -176,7 +176,8 @@
     if (!inPub(it)) return false;
     if (ignore !== 'type' && !state.types.has(it.type)) return false;
     if (state.char && !it.characters.includes(state.char)) return false;
-    if (state.creator && !it.writers.includes(state.creator) && !it.artists.includes(state.creator)) return false;
+    if (state.creator && !it.writers.includes(state.creator) && !it.artists.includes(state.creator)
+      && !(it.metron && CREDIT_SETS.has(state.creator) && CREDIT_SETS.get(state.creator).main.has(it.metron))) return false;
     if (state.event && it.event !== state.event) return false;
     if (state.q) {
       const words = state.q.toLowerCase().split(/\s+/).filter(Boolean);
@@ -484,6 +485,19 @@
         creators.set(c, s);
       });
     });
+    // Heroes and creators with full Metron data count every issue, not just key moments.
+    const firstYear = (ids) => { let f = Infinity; ids.forEach((id) => { const at = ISSUE_AT.get(id); if (at) f = Math.min(f, at[0].ys[at[1]]); }); return f; };
+    HERO_SETS.forEach((ids, name) => {
+      const s = chars.get(name) || { name, n: 0, first: Infinity, pubs: new Set() };
+      s.n = Math.max(s.n, ids.size); s.first = Math.min(s.first, firstYear(ids));
+      chars.set(name, s);
+    });
+    CREDIT_SETS.forEach((cs, name) => {
+      const s = creators.get(name) || { name, n: 0, first: Infinity, w: 0, a: 0 };
+      s.n = Math.max(s.n, cs.all.size); s.first = Math.min(s.first, firstYear(cs.all));
+      s.full = true;
+      creators.set(name, s);
+    });
     CHAR_STATS = [...chars.values()].sort((a, b) => b.n - a.n || a.name.localeCompare(b.name));
     CREATOR_STATS = [...creators.values()].sort((a, b) => b.n - a.n || a.name.localeCompare(b.name));
   }
@@ -537,7 +551,13 @@
       h += `<span class="pill">${esc(ev ? ev.title : state.event)}<button type="button" data-clear="event" aria-label="Clear event filter">${x}</button></span>`;
     }
     const firstIssue = issues[0], lastIssue = issues[issues.length - 1];
-    if (state.char && firstIssue) {
+    if (state.view === 'series' && state.char && HERO_SETS.has(state.char)) {
+      const n = HERO_SETS.get(state.char).size;
+      h += `<span class="story"><b>${n.toLocaleString()}</b> appearances across <b>${SERIES.filter(seriesMatches).length}</b> series, lit up in gold</span>`;
+    } else if (state.view === 'series' && state.creator && CREDIT_SETS.has(state.creator)) {
+      const cs = CREDIT_SETS.get(state.creator);
+      h += `<span class="story"><b>${cs.main.size.toLocaleString()}</b> issues written or drawn, lit up in green · <b>${cs.cover.size.toLocaleString()}</b> covers, outlined</span>`;
+    } else if (state.char && firstIssue) {
       const fa = ITEMS.find((i) => i.type === 'first' && i.ownChars.includes(state.char)) || firstIssue;
       h += `<span class="story">Debut <b>${esc(label(fa))}</b> (${esc(fmtDate(fa.date))}) · on this timeline ${Math.floor(firstIssue.y)}–${Math.floor(lastIssue.y)}</span>`;
     } else if (state.creator && firstIssue) {
@@ -682,7 +702,7 @@
       h += `<div class="d-actions"><button type="button" class="btn" data-event="${esc(it.event)}">Show only this event</button><button type="button" class="btn ghost" data-act="edit" data-id="${esc(it.id)}">Edit details</button></div>`;
     } else {
       const ser = seriesOf(it);
-      if (ser) h += seriesLinkHtml(ser, ISSUE_AT.get(it.metron)[1]) + issueNavHtml(ser, ISSUE_AT.get(it.metron)[1]);
+      if (ser) h += metronInfoHtml(it.metron) + seriesLinkHtml(ser, ISSUE_AT.get(it.metron)[1]) + issueNavHtml(ser, ISSUE_AT.get(it.metron)[1]);
       h += `<div class="d-actions">${ser ? `<button type="button" class="btn" data-series="${ser.id}">See the whole series</button>` : ''}<button type="button" class="btn ghost" data-act="locate" data-id="${esc(it.id)}">Show on timeline</button><button type="button" class="btn ghost" data-act="edit" data-id="${esc(it.id)}">Edit details</button></div>`;
     }
     const lookup = encodeURIComponent(`${label(it)} ${String(it.date).slice(0, 4)} ${it.publisher === 'dc' ? 'DC' : 'Marvel'} comic`);
@@ -867,6 +887,10 @@
   const ISSUE_AT = new Map(); // Metron issue id -> [series, index]
   const ARCS_OF = new Map(); // Metron issue id -> [event ids]
   const KEY_AT = new Map(); // Metron issue id -> timeline item
+  const HERO_SETS = new Map(); // character -> Set of Metron issue ids they appear in
+  const CREDIT_SETS = new Map(); // creator -> { all, main, cover } Sets of issue ids
+  const CREDITS_AT = new Map(); // Metron issue id -> [[creator, role]]
+  const ROLE_NAME = { w: 'writer', a: 'art', c: 'cover', x: 'credited' };
   const IMG_BASE = T.imgBase || '';
   const FAMILIES = [
     ['marvel', 'Spider-Man', /spider|venom|carnage|web of|peter parker/i],
@@ -908,7 +932,25 @@
       s.keys = [];
       s.chars = new Set();
       s.creators = new Set();
+      s.heroChars = new Set();
+      s.creditNames = new Set();
       s.issues.forEach((i, idx) => ISSUE_AT.set(i[0], [s, idx]));
+    });
+    Object.entries(T.chars || {}).forEach(([hero, ids]) => {
+      HERO_SETS.set(hero, new Set(ids));
+      ids.forEach((id) => { const at = ISSUE_AT.get(id); if (at) at[0].heroChars.add(hero); });
+    });
+    Object.entries(T.credits || {}).forEach(([name, kinds]) => {
+      const all = new Set(), main = new Set(), cover = new Set();
+      Object.entries(kinds).forEach(([k, ids]) => ids.forEach((id) => {
+        all.add(id);
+        (k === 'c' ? cover : main).add(id);
+        if (!CREDITS_AT.has(id)) CREDITS_AT.set(id, []);
+        CREDITS_AT.get(id).push([name, ROLE_NAME[k]]);
+        const at = ISSUE_AT.get(id);
+        if (at) at[0].creditNames.add(name);
+      }));
+      CREDIT_SETS.set(name, { all, main, cover });
     });
     Object.entries(T.arcs || {}).forEach(([ev, a]) => a.issues.forEach((id) => {
       if (!ARCS_OF.has(id)) ARCS_OF.set(id, []);
@@ -933,6 +975,8 @@
       it.writers.concat(it.artists).forEach((c) => s.creators.add(c));
     });
     SERIES.forEach((s) => {
+      s.heroChars.forEach((c) => s.chars.add(c));
+      s.creditNames.forEach((c) => s.creators.add(c));
       s.hay = [s.name, ...s.keys.map((k) => k.hay)].join(' ').toLowerCase();
       const fam = s.pub === 'crossover' ? 'Marvel × DC' : (FAMILIES.find((f) => f[0] === s.pub && f[2].test(s.title)) || [])[1];
       s.family = fam || (s.keys.length || !s.events.size ? (s.pub === 'dc' ? 'More DC' : 'More Marvel') : (s.pub === 'dc' ? 'DC events & minis' : 'Marvel events & minis'));
@@ -944,7 +988,9 @@
     if (state.pub !== 'both' && s.pub !== state.pub && s.pub !== 'crossover') return false;
     if (state.event) return s.events.has(state.event);
     if (!state.svOneShots && s.issues.length < 2 && !s.keys.length && !state.q) return false;
-    if (state.char) {
+    if (state.char && HERO_SETS.has(state.char)) {
+      if (!s.heroChars.has(state.char)) return false;
+    } else if (state.char) {
       const base = state.char.toLowerCase().replace(/\s*\(.*\)$/, '');
       if (!s.chars.has(state.char) && !s.title.toLowerCase().includes(base)) return false;
     }
@@ -1071,8 +1117,21 @@
     const sx = (y) => X(y) - sl;
     const pubC = { marvel: C.marvel, dc: C.dc, crossover: C.cross };
     const typeC = { first: C['t-first'], launch: C['t-launch'], key: C['t-key'], tiein: C['t-tiein'], event: C['t-event'], milestone: C['t-milestone'] };
+    // What to light up: an event's reading order, a hero's appearances, or a creator's credits.
     const hlEvent = state.event || (SV.hover && SV.hover.kind === 'event' ? SV.hover.e.event : null);
-    const hlSet = hlEvent && T.arcs && T.arcs[hlEvent] ? new Set(T.arcs[hlEvent].issues) : null;
+    let hlSet = null, hlWeak = null, hlColor = C['t-event'], rowLit = null;
+    if (hlEvent && T.arcs && T.arcs[hlEvent]) {
+      hlSet = SV.arcSet && SV.arcSetId === hlEvent ? SV.arcSet : (SV.arcSet = new Set(T.arcs[hlEvent].issues));
+      SV.arcSetId = hlEvent;
+      rowLit = (s) => s.events.has(hlEvent);
+    } else if (state.char && HERO_SETS.has(state.char)) {
+      hlSet = HERO_SETS.get(state.char); hlColor = C['t-first'];
+      rowLit = (s) => s.heroChars.has(state.char);
+    } else if (state.creator && CREDIT_SETS.has(state.creator)) {
+      const cs = CREDIT_SETS.get(state.creator);
+      hlSet = cs.main; hlWeak = cs.cover; hlColor = C['t-launch'];
+      rowLit = (s) => s.creditNames.has(state.creator);
+    }
     const yMin = (sl + LW - PADL) / state.ppy + MIN_YEAR - 0.1;
     const yMax = (sl + W - PADL) / state.ppy + MIN_YEAR + 0.1;
 
@@ -1139,7 +1198,7 @@
         ctx.fillRect(LW, y, W - LW, r.h);
         ctx.globalAlpha = 1;
       }
-      const dim = hlSet && !s.events.has(hlEvent);
+      const dim = hlSet && !rowLit(s);
       const pc = pubC[s.pub] || C.cross;
       // Run line
       ctx.fillStyle = pc;
@@ -1155,23 +1214,25 @@
         const x = sx(s.ys[k]);
         const key = KEY_AT.get(iss[0]);
         const inArc = hlSet && hlSet.has(iss[0]);
-        const faded = hlSet && !inArc;
+        const weak = !inArc && hlWeak && hlWeak.has(iss[0]);
+        const faded = hlSet && !inArc && !weak;
         if (cover) {
           const ix = x + (monthPx - tw) / 2, iy = y + 6;
           ctx.globalAlpha = faded ? 0.18 : 1;
           const rec = iss[3] ? svImage(iss[3]) : null;
           if (rec && rec.ok) ctx.drawImage(rec.img, ix, iy, tw, th);
           else { ctx.fillStyle = pc; ctx.fillRect(ix, iy, tw, th); }
-          if (key || inArc || (SV.sel === iss[0])) {
-            ctx.strokeStyle = SV.sel === iss[0] ? C.ink : inArc ? C['t-event'] : typeC[key.type] || C.ink;
+          if (key || inArc || weak || (SV.sel === iss[0])) {
+            ctx.strokeStyle = SV.sel === iss[0] ? C.ink : inArc || weak ? hlColor : typeC[key.type] || C.ink;
             ctx.lineWidth = SV.sel === iss[0] ? 3 : 2;
             ctx.strokeRect(ix - 1, iy - 1, tw + 2, th + 2);
           }
           ctx.globalAlpha = 1;
         } else {
           const h = r.h - 10;
-          ctx.fillStyle = inArc ? C['t-event'] : key ? typeC[key.type] || C.ink : pc;
+          ctx.fillStyle = inArc ? hlColor : key ? typeC[key.type] || C.ink : pc;
           ctx.globalAlpha = faded ? 0.12 : inArc || key ? 1 : 0.62;
+          if (weak) { ctx.globalAlpha = 1; ctx.strokeStyle = hlColor; ctx.lineWidth = 1.5; ctx.strokeRect(x + 0.75, y + 5.75, Math.max(0.5, tickW - 1.5), r.h - 11.5); }
           ctx.fillRect(x, y + (key ? 3 : 5), tickW, key ? h + 4 : h);
           if (SV.sel === iss[0]) { ctx.globalAlpha = 1; ctx.strokeStyle = C.ink; ctx.lineWidth = 2; ctx.strokeRect(x - 2, y + 2, tickW + 4, r.h - 4); }
           ctx.globalAlpha = 1;
@@ -1330,12 +1391,26 @@
       <div class="d-meta"><div class="badges">${badge(PUBS[s.pub].label, pubColor(s.pub))}${evs.length ? badge('Tie-in', 'var(--t-tiein)', 't-tiein') : ''}</div>
       <h2 class="d-title">${esc(s.title)} #${esc(iss[1])}</h2><div class="d-date">${esc(fmtDate(iss[2]))} cover date</div></div></div>`;
     h += seriesLinkHtml(s, idx);
+    h += metronInfoHtml(iss[0]);
     if (evs.length) h += `<div class="d-sec"><h3>Part of</h3>${evs.map((ev) => `<button type="button" class="ev-link" data-open="${esc(ev.id)}"><span class="sw"></span><span><b>${esc(ev.title)}</b><span>${esc(fmtRange(ev.date, ev.end))}</span></span></button>`).join('')}</div>`;
     h += issueNavHtml(s, idx);
     const lookup = encodeURIComponent(`${s.name} #${iss[1]} comic`);
     h += `<p class="d-note">Issue data and covers from <a href="https://metron.cloud" target="_blank" rel="noopener">Metron</a> · <a href="https://www.google.com/search?q=${lookup}" target="_blank" rel="noopener">web search</a></p>`;
     showDrawer(h);
     scheduleSeriesDraw();
+  }
+  // Credits and hero appearances Metron gave us for one issue.
+  function metronInfoHtml(id) {
+    let h = '';
+    const cr = CREDITS_AT.get(id);
+    if (cr && cr.length) {
+      const order = { writer: 0, art: 1, credited: 2, cover: 3 };
+      const rows = cr.slice().sort((a, b) => order[a[1]] - order[b[1]]);
+      h += `<div class="d-sec"><h3>Key creators</h3><div class="tags">${rows.map(([n, r]) => `<button type="button" class="tag" data-creator="${esc(n)}">${esc(n)} <span class="role">${esc(r)}</span></button>`).join('')}</div></div>`;
+    }
+    const heroes = [...HERO_SETS].filter(([, set]) => set.has(id)).map(([n]) => n);
+    if (heroes.length) h += `<div class="d-sec"><h3>Appearing</h3>${tagList(heroes, 'char')}</div>`;
+    return h;
   }
   function seriesLinkHtml(s, idx) {
     return `<div class="d-sec"><h3>Series</h3><button type="button" class="ev-link" data-series="${s.id}"><span class="sw" style="background:${pubColor(s.pub)}"></span><span><b>${esc(s.name)}</b><span>${esc(s.years)} · ${s.count} issues${idx != null ? ` · issue ${idx + 1} of ${s.issues.length}` : ''}</span></span></button></div>`;

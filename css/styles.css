@@ -412,6 +412,7 @@ body[data-view="series"] #type-sec { display: none; }
   border: 1px solid var(--line); background: var(--raised); border-radius: 5px; padding: 3px 8px; font-size: 12px; cursor: pointer;
 }
 .tag:hover { border-color: var(--ink); }
+.tag .role { color: var(--muted); font: 10px var(--f-mono); margin-left: 2px; }
 .tag.villain { border-left: 3px solid var(--marvel); }
 .tag.hero { border-left: 3px solid var(--t-launch); }
 .ev-link {
