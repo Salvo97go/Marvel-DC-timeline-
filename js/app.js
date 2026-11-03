@@ -23,6 +23,15 @@
     dc: { label: 'DC', brand: 'DC' },
     crossover: { label: 'Marvel × DC', brand: 'Marvel × DC' }
   };
+  // Creator spotlights get their own lane, shown whichever publisher is picked.
+  const SPOTS = (T.spotlights || []);
+  const SPOT_BY_PUB = {};
+  SPOTS.forEach((sp) => {
+    const pub = 'spot-' + sp.id;
+    PUBS[pub] = { label: sp.name, brand: sp.name.split(' ').pop() };
+    SPOT_BY_PUB[pub] = sp;
+  });
+  const isSpot = (pub) => pub in SPOT_BY_PUB;
   // Era boundaries are the conventional collector ones; historians argue the edges.
   const ERAS = [
     { name: 'Platinum', start: MIN_YEAR, end: 1938 },
@@ -100,6 +109,9 @@
     (T.marvel || []).forEach((r) => push(r, 'marvel'));
     (T.dc || []).forEach((r) => push(r, 'dc'));
     (T.crossover || []).forEach((r) => push(r, 'crossover'));
+    SPOTS.forEach((sp) => sp.works.forEach((w) => push(Object.assign({
+      writers: [], artists: [sp.name], series: w.from
+    }, w), 'spot-' + sp.id)));
     (T.events || []).forEach((e) => push({
       id: 'event-' + e.id, publisher: e.publisher, date: e.start, end: e.end, title: e.name, issue: '',
       type: 'event', event: e.id, series: e.series, writers: e.writers || [], artists: e.artists || [],
@@ -170,7 +182,7 @@
   }
 
   function inPub(it) {
-    return state.pub === 'both' || it.publisher === state.pub || it.publisher === 'crossover';
+    return state.pub === 'both' || it.publisher === state.pub || it.publisher === 'crossover' || isSpot(it.publisher);
   }
   function matches(it, ignore) {
     if (!inPub(it)) return false;
@@ -226,7 +238,7 @@
   function setPadl() { PADL = state.view === 'series' ? LABEL_W() + 24 : 40; }
   function renderTime() { if (state.view === 'series') renderSeries(); else renderTimeline(); }
   function zoomMode() { return state.ppy >= 300 ? 'full' : state.ppy >= 80 ? 'mini' : 'dot'; }
-  function lanes() { return state.pub === 'both' ? ['marvel', 'crossover', 'dc'] : [state.pub, 'crossover']; }
+  function lanes() { return (state.pub === 'both' ? ['marvel', 'crossover', 'dc'] : [state.pub, 'crossover']).concat(Object.keys(SPOT_BY_PUB)); }
 
   function axisHtml() {
     const ppy = state.ppy;
@@ -366,6 +378,7 @@
     const span = MAX_YEAR - MIN_YEAR;
     const px = (y) => ((y - MIN_YEAR) / span) * W;
     const colors = { marvel: cssVar('--marvel'), dc: cssVar('--dc'), crossover: cssVar('--cross') };
+    Object.keys(SPOT_BY_PUB).forEach((p) => { colors[p] = cssVar('--spot'); });
     const evColor = cssVar('--t-event');
 
     ctx.fillStyle = cssVar('--stripe') || 'rgba(0,0,0,.04)';
@@ -377,7 +390,7 @@
     const bump = (y, pub) => {
       const c = counts[y] || (counts[y] = { marvel: 0, dc: 0, crossover: 0 });
       c[pub] = (c[pub] || 0) + 1;
-      max = Math.max(max, c.marvel + c.dc + c.crossover);
+      max = Math.max(max, Object.values(c).reduce((a, b) => a + b, 0));
     };
     // In the series view the bars count every issue of the series shown.
     if (state.view === 'series' && SV.list) SV.list.forEach((s) => s.ys.forEach((y) => bump(Math.floor(y), s.pub)));
@@ -387,7 +400,7 @@
     const scale = (base - 12) / max;
     Object.keys(counts).forEach((y) => {
       let yy = base;
-      ['marvel', 'crossover', 'dc'].forEach((p) => {
+      ['marvel', 'crossover', 'dc', ...Object.keys(SPOT_BY_PUB)].forEach((p) => {
         const n = counts[y][p];
         if (!n) return;
         ctx.fillStyle = colors[p];
@@ -526,6 +539,25 @@
     }).join('') : '<li class="empty">No creators match.</li>';
   }
 
+  function renderSpotList() {
+    $('#spot-list').innerHTML = SPOTS.map((sp) => {
+      const n = sp.works.filter((w) => w.type !== 'milestone').length;
+      return `<li><button type="button" data-spot="${esc(sp.id)}" class="${state.creator === sp.name ? 'on' : ''}" style="--c:var(--spot)"><span class="dot"></span><span class="nm">${esc(sp.name)}</span><span class="yr">${String(sp.born).slice(0, 4)}</span><span class="ct">${n}</span></button></li>`;
+    }).join('');
+  }
+
+  function spotlightHtml(sp) {
+    const pub = 'spot-' + sp.id;
+    const works = ITEMS.filter((it) => it.publisher === pub).sort((a, b) => a.y - b.y);
+    const life = `${fmtDate(sp.born)} – ${sp.died ? fmtDate(sp.died) : 'today'}${sp.birthplace ? ` · born in ${sp.birthplace}` : ''}`;
+    let h = `<div class="d-meta spot-head"><div class="badges">${badge('Creator spotlight', 'var(--spot)')}${badge(sp.role, 'var(--muted)')}</div>
+      <h2 class="d-title">${esc(sp.name)}</h2><div class="d-date">${esc(life)}</div></div>`;
+    h += `<p class="d-summary">${esc(sp.summary)}</p>`;
+    h += `<div class="d-sec"><h3>Career</h3><ol class="reading">${works.map((w) => `<li><button type="button" data-open="${esc(w.id)}"${w.type === 'milestone' ? '' : ' class="core"'}><span class="rd">${esc(fmtDate(w.date))}</span><span>${esc(label(w))}<span class="rk">${esc(w.series || TYPES[w.type].short)}</span></span></button></li>`).join('')}</ol></div>`;
+    h += `<div class="d-actions"><button type="button" class="btn" data-creator="${esc(sp.name)}">Show only his work</button></div>`;
+    return h;
+  }
+
   function renderEventList() {
     const evs = ITEMS.filter((it) => it.type === 'event' && inPub(it));
     $('#event-n').textContent = evs.length;
@@ -591,6 +623,7 @@
     renderCharList();
     renderCreatorList();
     renderEventList();
+    renderSpotList();
     renderFocus();
     if (timeView()) {
       setPadl();
@@ -638,7 +671,7 @@
     return `<div class="tags">${names.map((n) => `<button type="button" class="tag ${kind === 'char' ? ROLE[n] || '' : ''}" data-${kind}="${esc(n)}">${esc(n)}</button>`).join('')}</div>`;
   }
   function badge(text, color, extra = '') { return `<span class="badge ${extra}" style="--c:${color}">${esc(text)}</span>`; }
-  function pubColor(p) { return p === 'dc' ? 'var(--dc)' : p === 'marvel' ? 'var(--marvel)' : 'var(--cross)'; }
+  function pubColor(p) { return p === 'dc' ? 'var(--dc)' : p === 'marvel' ? 'var(--marvel)' : isSpot(p) ? 'var(--spot)' : 'var(--cross)'; }
   const TYPE_COLOR = { first: 'var(--t-first)', launch: 'var(--t-launch)', key: 'var(--t-key)', event: 'var(--t-event)', tiein: 'var(--t-tiein)', milestone: 'var(--t-milestone)' };
 
   function openItem(id) {
@@ -673,6 +706,11 @@
     </div>`;
     if (it.summary) h += `<p class="d-summary">${esc(it.summary)}</p>`;
     if (it.type === 'event' && it.series) h += `<div class="d-sec"><h3>Core series</h3><div>${esc(it.series)}</div></div>`;
+    if (isSpot(it.publisher)) {
+      const sp = SPOT_BY_PUB[it.publisher];
+      if (it.series) h += `<div class="d-sec"><h3>Published by</h3><div>${esc(it.series)}</div></div>`;
+      h += `<div class="d-sec"><h3>Creator spotlight</h3><button type="button" class="ev-link" data-spot="${esc(sp.id)}"><span class="sw" style="background:var(--spot)"></span><span><b>${esc(sp.name)}</b><span>Full career on one lane</span></span></button></div>`;
+    }
 
     if (ev && it.type !== 'event') {
       h += `<div class="d-sec"><h3>Part of</h3><button type="button" class="ev-link" data-open="${esc(ev.id)}"><span class="sw"></span><span><b>${esc(ev.title)}</b><span>${esc(fmtRange(ev.date, ev.end))}</span></span></button></div>`;
@@ -1501,6 +1539,17 @@
       return;
     }
     if (t.dataset.series) { showSeries(t.dataset.series); return; }
+    if (t.dataset.spot) {
+      const sp = SPOTS.find((x) => x.id === t.dataset.spot);
+      if (!sp) return;
+      closeSide();
+      if (state.view !== 'timeline') { state.view = 'timeline'; refresh(); }
+      showDrawer(spotlightHtml(sp));
+      const first = ITEMS.find((it) => it.publisher === 'spot-' + sp.id && it.type !== 'milestone');
+      const lane = stage.querySelector('.lane-spot-' + sp.id);
+      if (first) stage.scrollTo({ left: Math.max(0, X(first.y) - 80), top: lane ? lane.offsetTop - 60 : stage.scrollTop, behavior: 'smooth' });
+      return;
+    }
     if (t.dataset.issue) {
       const [sid, idx] = t.dataset.issue.split(':');
       const s = SERIES_BY_ID.get(+sid);

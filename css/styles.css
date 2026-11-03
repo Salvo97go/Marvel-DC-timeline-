@@ -13,6 +13,7 @@
   --marvel: #d0161d;
   --dc: #0b5bd3;
   --cross: #a77a07;
+  --spot: #b4521f;
   --t-first: #d99a00;
   --t-launch: #178a57;
   --t-key: #16181d;
@@ -33,7 +34,7 @@
   :root:not([data-theme="light"]) {
     --bg: #0f1116; --surface: #161920; --raised: #1d2129; --ink: #eceef2; --muted: #a2a8b4; --faint: #6d7480;
     --line: #2b303a; --stripe: rgba(236, 238, 242, 0.03);
-    --marvel: #ff3d43; --dc: #3f8cff; --cross: #e3b23c;
+    --marvel: #ff3d43; --dc: #3f8cff; --cross: #e3b23c; --spot: #f08a4b;
     --t-first: #f2b632; --t-launch: #3cc489; --t-key: #eceef2; --t-event: #9a77ff; --t-tiein: #b9a3f5; --t-milestone: #8f96a1;
     --focus: #6fa8ff; --shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(0, 0, 0, 0.35);
     color-scheme: dark;
@@ -42,7 +43,7 @@
 :root[data-theme="dark"] {
   --bg: #0f1116; --surface: #161920; --raised: #1d2129; --ink: #eceef2; --muted: #a2a8b4; --faint: #6d7480;
   --line: #2b303a; --stripe: rgba(236, 238, 242, 0.03);
-  --marvel: #ff3d43; --dc: #3f8cff; --cross: #e3b23c;
+  --marvel: #ff3d43; --dc: #3f8cff; --cross: #e3b23c; --spot: #f08a4b;
   --t-first: #f2b632; --t-launch: #3cc489; --t-key: #eceef2; --t-event: #9a77ff; --t-tiein: #b9a3f5; --t-milestone: #8f96a1;
   --focus: #6fa8ff; --shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(0, 0, 0, 0.35);
   color-scheme: dark;
@@ -250,6 +251,8 @@ details.side-sec[open] > summary::after { content: "−"; }
 .lane-marvel .lane-name { color: var(--marvel); }
 .lane-dc .lane-name { color: var(--dc); }
 .lane-crossover .lane-name { color: var(--cross); }
+[class*="lane-spot-"] .lane-name { color: var(--spot); }
+[class*="lane-spot-"] { border-top: 2px solid var(--spot); }
 .lane-count { font: 11px var(--f-mono); color: var(--faint); }
 .lane-body { position: absolute; left: 0; right: 0; }
 
@@ -288,6 +291,7 @@ details.side-sec[open] > summary::after { content: "−"; }
 .pub-marvel { --pub: var(--marvel); }
 .pub-dc { --pub: var(--dc); }
 .pub-crossover { --pub: var(--cross); }
+[class*=" pub-spot-"], [class^="pub-spot-"] { --pub: var(--spot); }
 .t-first { --tc: var(--t-first); }
 .t-launch { --tc: var(--t-launch); }
 .t-key { --tc: var(--t-key); }
