@@ -554,7 +554,7 @@
       <h2 class="d-title">${esc(sp.name)}</h2><div class="d-date">${esc(life)}</div></div>`;
     h += `<p class="d-summary">${esc(sp.summary)}</p>`;
     h += `<div class="d-sec"><h3>Career</h3><ol class="reading">${works.map((w) => `<li><button type="button" data-open="${esc(w.id)}"${w.type === 'milestone' ? '' : ' class="core"'}><span class="rd">${esc(fmtDate(w.date))}</span><span>${esc(label(w))}<span class="rk">${esc(w.series || TYPES[w.type].short)}</span></span></button></li>`).join('')}</ol></div>`;
-    h += `<div class="d-actions"><button type="button" class="btn" data-creator="${esc(sp.name)}">Show only his work</button></div>`;
+    h += `<div class="d-actions"><button type="button" class="btn" data-creator="${esc(sp.name)}">Show only ${esc(sp.name)}'s work</button></div>`;
     return h;
   }
 
