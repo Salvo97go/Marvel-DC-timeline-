@@ -110,6 +110,7 @@
         </div>
         <button type="button" class="chip" id="sv-oneshots" aria-pressed="false"><span class="sw" style="--c:var(--muted)"></span>One-shots</button>
       </div>
+      <button type="button" class="btn ghost sm" id="btn-print" title="Print or save the covers you're looking at">Print covers</button>
       <div class="zoom" id="zoom-ctl">
         <button type="button" class="icon-btn" id="zoom-out" aria-label="Zoom out"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12"/></svg></button>
         <input type="range" id="zoom" min="0" max="1000" value="400" aria-label="Zoom">
@@ -136,6 +137,32 @@
   <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-title">
     <button type="button" class="icon-btn drawer-close" id="modal-close" aria-label="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
     <div id="modal-body"></div>
+  </div>
+</div>
+
+<div class="print-sheet" id="print-sheet" hidden>
+  <div class="ps-bar">
+    <div class="ps-controls">
+      <label for="ps-from">Years</label>
+      <input type="number" id="ps-from" inputmode="numeric">
+      <span>to</span>
+      <input type="number" id="ps-to" inputmode="numeric">
+      <label for="ps-cols">Per row</label>
+      <select id="ps-cols">
+        <option value="3">3</option><option value="4">4</option><option value="5" selected>5</option><option value="6">6</option><option value="8">8</option>
+      </select>
+      <label class="ps-check"><input type="checkbox" id="ps-caps" checked> Titles and dates</label>
+    </div>
+    <span class="ps-count" id="ps-count"></span>
+    <div class="ps-actions">
+      <button type="button" class="btn" id="ps-print">Print or save as PDF</button>
+      <button type="button" class="btn ghost" id="ps-close">Close</button>
+    </div>
+  </div>
+  <div class="ps-page">
+    <h1 class="ps-title" id="ps-title"></h1>
+    <p class="ps-sub" id="ps-sub"></p>
+    <div class="ps-grid" id="ps-grid"></div>
   </div>
 </div>
 

@@ -732,6 +732,7 @@
           const key = KEY_AT.get(iss[0]);
           return `<li><button type="button" data-issue="${ser.id}:${i}"${key ? ' class="core"' : ''}><span class="rd">${esc(fmtDate(iss[2]))}</span><span>${esc(ser.title)} #${esc(iss[1])}${key ? `<span class="rk">★ ${esc(TYPES[key.type].short)}</span>` : ''}</span></button></li>`;
         }).join('')}</ol></div>`;
+        h += `<div class="d-actions"><button type="button" class="btn" data-act="print-event" data-event-id="${esc(it.event)}">Print the reading order</button></div>`;
         h += `<p class="d-note">Reading order from <a href="https://metron.cloud" target="_blank" rel="noopener">Metron</a>. In the Series view, this event lights up every one of these issues.</p>`;
       }
       const reading = [it, ...parts].sort((a, b) => a.y - b.y);
@@ -1488,6 +1489,7 @@
       const tie = ARCS_OF.has(iss[0]);
       return `<button type="button" class="ig${key ? ' key t-' + key.type : ''}${tie ? ' tie' : ''}" data-issue="${s.id}:${i}" title="${esc(s.title)} #${esc(iss[1])} · ${esc(fmtDate(iss[2]))}">${iss[3] ? `<img src="${esc(IMG_BASE + iss[3])}" alt="" loading="lazy" referrerpolicy="no-referrer">` : ''}<span>#${esc(iss[1])}</span><i>${esc(fmtDate(iss[2]))}</i></button>`;
     }).join('')}</div></div>`;
+    h += `<div class="d-actions"><button type="button" class="btn" data-act="print-series" data-id="${s.id}">Print these covers</button></div>`;
     h += `<p class="d-note">Purple outline: part of an event. Gold, green or white outline: a key moment on the timeline. Data from <a href="https://metron.cloud" target="_blank" rel="noopener">Metron</a>.</p>`;
     showDrawer(h);
     scheduleSeriesDraw();
@@ -1509,6 +1511,114 @@
     openSeries(s);
     if (row) stage.scrollTo({ top: Math.max(0, row.off - 80), left: Math.max(0, X(s.y0) - LABEL_W() - 60), behavior: 'smooth' });
   }
+
+  // ── Print sheet ──────────────────────────────────────────────────
+  // Lays out covers in a paper-sized grid. The browser's print dialog can
+  // print it or save it as a PDF.
+  const PRINT_MAX = 500;
+  const PR = { title: '', sub: '', entries: [] };
+  const issueEntry = (s, idx) => ({ img: s.issues[idx][3] ? IMG_BASE + s.issues[idx][3] : '', title: s.title, num: s.issues[idx][1], date: s.issues[idx][2], y: s.ys[idx], pub: s.pub });
+  const itemEntry = (it) => ({ img: it.cover || '', title: it.title, num: it.issue, date: it.date, y: it.y, pub: it.publisher });
+  const byDate = (a, b) => a.y - b.y;
+
+  // Whatever the current view is showing, as a list of covers.
+  function currentPrintSet() {
+    if (state.view === 'series' && SERIES.length) {
+      const rows = SV.list || SERIES.filter(seriesMatches);
+      let set = null, what = '';
+      if (state.event && T.arcs && T.arcs[state.event]) {
+        const ev = BYID['event-' + state.event];
+        return { title: ev ? ev.title : 'Event', sub: 'Full reading order', entries: T.arcs[state.event].issues.map((id) => ISSUE_AT.get(id)).filter(Boolean).map(([s, i]) => issueEntry(s, i)) };
+      }
+      if (state.char && HERO_SETS.has(state.char)) { set = HERO_SETS.get(state.char); what = `Every ${state.char} appearance`; }
+      else if (state.creator && CREDIT_SETS.has(state.creator)) { set = CREDIT_SETS.get(state.creator).main; what = 'Written or drawn'; }
+      const out = [];
+      rows.forEach((s) => s.issues.forEach((iss, i) => { if (!set || set.has(iss[0])) out.push(issueEntry(s, i)); }));
+      const title = state.char || state.creator || (state.q ? `“${state.q}”` : 'Series');
+      return { title, sub: what || `${rows.length} series`, entries: out.sort(byDate) };
+    }
+    const items = ITEMS.filter((it) => matches(it) && it.type !== 'event' && it.type !== 'milestone');
+    const title = state.char || state.creator || (state.event && BYID['event-' + state.event] ? BYID['event-' + state.event].title : '') || (state.q ? `“${state.q}”` : 'Key issues');
+    return { title, sub: 'Key issues from the timeline', entries: items.map(itemEntry) };
+  }
+
+  function openPrint(set) {
+    PR.title = set.title;
+    PR.sub = set.sub;
+    PR.entries = set.entries;
+    const years = set.entries.map((e) => Math.floor(e.y)).filter((y) => !isNaN(y));
+    const lo = years.length ? Math.min(...years) : MIN_YEAR, hi = years.length ? Math.max(...years) : MAX_YEAR;
+    $('#ps-from').value = lo;
+    $('#ps-to').value = set.entries.length > PRINT_MAX ? Math.min(hi, yearsForMax(set.entries, lo)) : hi;
+    $('#ps-from').min = $('#ps-to').min = lo;
+    $('#ps-from').max = $('#ps-to').max = hi;
+    hideTip();
+    closeSide();
+    $('#print-sheet').hidden = false;
+    renderPrint();
+  }
+  // The last year that keeps the sheet under the size limit.
+  function yearsForMax(entries, from) {
+    const perYear = new Map();
+    entries.forEach((e) => { const y = Math.floor(e.y); if (y >= from) perYear.set(y, (perYear.get(y) || 0) + 1); });
+    let n = 0, last = from;
+    for (const y of [...perYear.keys()].sort((a, b) => a - b)) {
+      n += perYear.get(y);
+      if (n > PRINT_MAX) break;
+      last = y;
+    }
+    return last;
+  }
+
+  function renderPrint() {
+    const from = +$('#ps-from').value, to = +$('#ps-to').value;
+    const cols = +$('#ps-cols').value;
+    const caps = $('#ps-caps').checked;
+    let list = PR.entries.filter((e) => e.y >= from && e.y < to + 1);
+    const over = list.length > PRINT_MAX;
+    // Rows that fit on a letter page inside 10mm margins (~196 × 255mm usable).
+    const colW = (196 - (cols - 1) * 2.6) / cols;
+    const rowsPerPage = Math.max(1, Math.floor(255 / (colW * 1.5 + (caps ? 10 : 2) + 3.7)));
+    const pages = Math.max(1, Math.ceil(Math.min(list.length, PRINT_MAX) / (cols * rowsPerPage)));
+    if (over) list = list.slice(0, PRINT_MAX);
+    $('#ps-grid').style.setProperty('--cols', cols);
+    $('#ps-grid').classList.toggle('no-caps', !caps);
+    $('#ps-title').textContent = PR.title;
+    $('#ps-sub').textContent = `${PR.sub} · ${from === to ? from : `${from}–${to}`} · ${list.length} cover${list.length === 1 ? '' : 's'}`;
+    $('#ps-count').textContent = over
+      ? `Showing the first ${PRINT_MAX} of ${PR.entries.filter((e) => e.y >= from && e.y < to + 1).length}. Narrow the years to print the rest.`
+      : `${list.length} cover${list.length === 1 ? '' : 's'} · about ${pages} page${pages === 1 ? '' : 's'}`;
+    $('#ps-grid').innerHTML = list.map((e) => `<figure class="ps-card pub-${esc(e.pub)}">
+      <div class="ps-cover" style="--h:${hash(e.title) % 360}">${e.img ? `<img src="${esc(e.img)}" alt="${esc(e.title)} #${esc(e.num)}" referrerpolicy="no-referrer">` : ''}<span class="ps-ph">${esc(e.title)}${e.num ? `<b>#${esc(e.num)}</b>` : ''}</span></div>
+      <figcaption><b>${esc(e.title)}${e.num ? ` #${esc(e.num)}` : ''}</b><span>${esc(fmtDate(e.date))}</span></figcaption>
+    </figure>`).join('');
+    updatePrintStatus();
+  }
+
+  // Wait for covers to finish loading before opening the print dialog.
+  function updatePrintStatus() {
+    const imgs = [...$('#ps-grid').querySelectorAll('img')];
+    const done = imgs.filter((i) => i.complete).length;
+    const btn = $('#ps-print');
+    btn.textContent = done < imgs.length ? `Loading covers ${done}/${imgs.length}…` : 'Print or save as PDF';
+    return done >= imgs.length;
+  }
+  function printWhenReady() {
+    const go = () => { updatePrintStatus(); window.print(); };
+    if (updatePrintStatus()) { go(); return; }
+    const imgs = [...$('#ps-grid').querySelectorAll('img')].filter((i) => !i.complete);
+    let left = imgs.length;
+    const tick = () => { updatePrintStatus(); if (--left <= 0) go(); };
+    imgs.forEach((i) => { i.addEventListener('load', tick, { once: true }); i.addEventListener('error', tick, { once: true }); });
+    // Don't wait forever on a slow or missing image.
+    setTimeout(() => { if (left > 0) { left = 0; go(); } }, 20000);
+  }
+  $('#ps-grid').addEventListener('load', () => updatePrintStatus(), true);
+  $('#ps-grid').addEventListener('error', (e) => { if (e.target.tagName === 'IMG') { e.target.remove(); updatePrintStatus(); } }, true);
+  ['ps-from', 'ps-to', 'ps-cols', 'ps-caps'].forEach((id) => $('#' + id).addEventListener('change', renderPrint));
+  $('#ps-print').addEventListener('click', printWhenReady);
+  $('#ps-close').addEventListener('click', () => { $('#print-sheet').hidden = true; });
+  $('#btn-print').addEventListener('click', () => openPrint(currentPrintSet()));
 
   // ── Events ───────────────────────────────────────────────────────
   function setFilter(key, val) {
@@ -1595,6 +1705,17 @@
       case 'revert': revert(t.dataset.id); break;
       case 'delete': removeAdded(t.dataset.id); break;
       case 'locate': locate(t.dataset.id); break;
+      case 'print-series': {
+        const s = SERIES_BY_ID.get(+t.dataset.id);
+        if (s) openPrint({ title: s.title, sub: `${s.years} · every issue`, entries: s.issues.map((iss, i) => issueEntry(s, i)) });
+        break;
+      }
+      case 'print-event': {
+        const ev = BYID['event-' + t.dataset.eventId];
+        const ids = (T.arcs[t.dataset.eventId] || { issues: [] }).issues;
+        openPrint({ title: ev ? ev.title : 'Event', sub: 'Full reading order', entries: ids.map((id) => ISSUE_AT.get(id)).filter(Boolean).map(([s, i]) => issueEntry(s, i)) });
+        break;
+      }
       case 'series-event':
         state.event = t.dataset.eventId;
         state.view = 'series';
@@ -1714,7 +1835,8 @@
   });
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
-    if (!$('#modal').hidden) closeModal();
+    if (!$('#print-sheet').hidden) $('#print-sheet').hidden = true;
+    else if (!$('#modal').hidden) closeModal();
     else if (side.classList.contains('open')) closeSide();
     else if (!drawer.hidden) closeDrawer();
   });

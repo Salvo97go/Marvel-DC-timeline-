@@ -15,6 +15,7 @@ No build step. Open `index.html` in a browser, or serve the folder (for example 
 - **Creator spotlights**: creators big enough to get their own lane, like Frank Frazetta, with their whole career including work outside Marvel and DC.
 - **Characters**: pick a hero or villain to follow just their issues, including the events they were part of.
 - **Events**: the purple bars. Open one for its reading order, core series and tie-ins.
+- **Print covers**: lay out the covers you're looking at (a series, an event's reading order, a hero's appearances, a creator's issues, or the timeline's key issues) in a grid, then print it or save it as a PDF. Pick covers per row and a year range.
 - **Search** matches titles, characters, writers, artists and notes.
 - **Edit details / Add issue**: fill in writers, artists, cover image links and notes. Edits are saved in your browser; **Your edits** lets you copy them out so they can be added to the data files.
 
