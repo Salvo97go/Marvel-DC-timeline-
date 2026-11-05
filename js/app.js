@@ -21,7 +21,8 @@
   const PUBS = {
     marvel: { label: 'Marvel', brand: 'Marvel' },
     dc: { label: 'DC', brand: 'DC' },
-    crossover: { label: 'Marvel × DC', brand: 'Marvel × DC' }
+    crossover: { label: 'Crossovers', brand: 'Marvel × DC' },
+    manga: { label: 'Manga', brand: 'Manga' }
   };
   // Creator spotlights get their own lane, shown whichever publisher is picked.
   const SPOTS = (T.spotlights || []);
@@ -32,8 +33,13 @@
     SPOT_BY_PUB[pub] = sp;
   });
   const isSpot = (pub) => pub in SPOT_BY_PUB;
+  // Manga spotlights show with Manga; the others with Marvel and DC.
+  const spotVisible = (pub) => {
+    const manga = SPOT_BY_PUB[pub].world === 'manga';
+    return state.pub === 'both' || (state.pub === 'manga') === manga;
+  };
   // Era boundaries are the conventional collector ones; historians argue the edges.
-  const ERAS = [
+  const US_ERAS = [
     { name: 'Platinum', start: MIN_YEAR, end: 1938 },
     { name: 'Golden Age', start: 1938, end: 1956 },
     { name: 'Silver Age', start: 1956, end: 1970 },
@@ -41,6 +47,9 @@
     { name: 'Copper Age', start: 1985, end: 1992 },
     { name: 'Modern Age', start: 1992, end: MAX_YEAR }
   ];
+  const MANGA_ERAS = ((T.manga && T.manga.eras) || []).map((e) => ({ name: e.name, start: Math.max(MIN_YEAR, e.start), end: Math.min(MAX_YEAR, e.end) }));
+  let ERAS = US_ERAS;
+  function setEras() { ERAS = state.pub === 'manga' && MANGA_ERAS.length ? MANGA_ERAS : US_ERAS; }
   const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const SIZES = {
     full: { w: 92, h: 182, gap: 10 },
@@ -109,6 +118,14 @@
     (T.marvel || []).forEach((r) => push(r, 'marvel'));
     (T.dc || []).forEach((r) => push(r, 'dc'));
     (T.crossover || []).forEach((r) => push(r, 'crossover'));
+    const M = T.manga || {};
+    (M.series || []).forEach((m) => push({
+      id: 'manga-' + slug(m.title), mangaId: 'manga-' + slug(m.title), date: m.start, end: m.end, title: m.title, issue: '',
+      type: 'launch', series: m.magazine, writers: m.writers, artists: m.artists, characters: m.characters,
+      summary: m.summary, manga: m
+    }, 'manga'));
+    (M.history || []).forEach((r) => push(r, 'manga'));
+    (M.bridges || []).forEach((r) => push(Object.assign({ bridge: true }, r), 'crossover'));
     SPOTS.forEach((sp) => sp.works.forEach((w) => push(Object.assign({
       writers: [], artists: [sp.name], series: w.from
     }, w), 'spot-' + sp.id)));
@@ -149,6 +166,7 @@
     ITEMS = out.filter((it) => !isNaN(it.y)).sort((a, b) => a.y - b.y || (a.type === 'event') - (b.type === 'event'));
 
     if (typeof linkSeries === 'function') linkSeries();
+    if (typeof applyMangaCovers === 'function') applyMangaCovers();
     ROLE = {};
     ((T.roles && T.roles.hero) || []).forEach((n) => { ROLE[n] = 'hero'; });
     ((T.roles && T.roles.villain) || []).forEach((n) => { ROLE[n] = 'villain'; });
@@ -182,7 +200,12 @@
   }
 
   function inPub(it) {
-    return state.pub === 'both' || it.publisher === state.pub || it.publisher === 'crossover' || isSpot(it.publisher);
+    const p = it.publisher;
+    if (isSpot(p)) return spotVisible(p);
+    if (state.pub === 'both') return true;
+    // Crossovers show with either side; with Manga, only the manga ones.
+    if (p === 'crossover') return state.pub !== 'manga' || !!it.bridge;
+    return p === state.pub;
   }
   function matches(it, ignore) {
     if (!inPub(it)) return false;
@@ -211,7 +234,7 @@
   function coverHtml(it, size) {
     const h = hash(it.title) % 360;
     const brand = it.type === 'milestone' ? 'History' : it.type === 'event' ? `${PUBS[it.publisher].brand} event` : PUBS[it.publisher].brand;
-    const num = it.issue ? '#' + it.issue : it.type === 'event' ? 'EVENT' : it.type === 'milestone' ? String(it.date).slice(0, 4) : 'GN';
+    const num = it.issue ? '#' + it.issue : it.type === 'event' ? 'EVENT' : it.type === 'milestone' || it.publisher === 'manga' ? String(it.date).slice(0, 4) : 'GN';
     const img = it.cover ? `<img src="${esc(it.cover)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : '';
     if (size === 'mini') {
       return `<span class="cv cv-mini" style="--h:${h}"><span class="cv-brand">${esc(it.publisher === 'crossover' ? 'M×DC' : PUBS[it.publisher].brand)}</span><span class="cv-num">${esc(it.issue ? '#' + it.issue : '★')}</span>${img}</span>`;
@@ -238,7 +261,10 @@
   function setPadl() { PADL = state.view === 'series' ? LABEL_W() + 24 : 40; }
   function renderTime() { if (state.view === 'series') renderSeries(); else renderTimeline(); }
   function zoomMode() { return state.ppy >= 300 ? 'full' : state.ppy >= 80 ? 'mini' : 'dot'; }
-  function lanes() { return (state.pub === 'both' ? ['marvel', 'crossover', 'dc'] : [state.pub, 'crossover']).concat(Object.keys(SPOT_BY_PUB)); }
+  function lanes() {
+    const base = state.pub === 'both' ? ['marvel', 'crossover', 'dc', 'manga'] : state.pub === 'manga' ? ['manga', 'crossover'] : [state.pub, 'crossover'];
+    return base.concat(Object.keys(SPOT_BY_PUB).filter(spotVisible));
+  }
 
   function axisHtml() {
     const ppy = state.ppy;
@@ -379,6 +405,7 @@
     const px = (y) => ((y - MIN_YEAR) / span) * W;
     const colors = { marvel: cssVar('--marvel'), dc: cssVar('--dc'), crossover: cssVar('--cross') };
     Object.keys(SPOT_BY_PUB).forEach((p) => { colors[p] = cssVar('--spot'); });
+    colors.manga = cssVar('--manga');
     const evColor = cssVar('--t-event');
 
     ctx.fillStyle = cssVar('--stripe') || 'rgba(0,0,0,.04)';
@@ -400,7 +427,7 @@
     const scale = (base - 12) / max;
     Object.keys(counts).forEach((y) => {
       let yy = base;
-      ['marvel', 'crossover', 'dc', ...Object.keys(SPOT_BY_PUB)].forEach((p) => {
+      ['marvel', 'crossover', 'dc', 'manga', ...Object.keys(SPOT_BY_PUB)].forEach((p) => {
         const n = counts[y][p];
         if (!n) return;
         ctx.fillStyle = colors[p];
@@ -625,6 +652,7 @@
     renderEventList();
     renderSpotList();
     renderFocus();
+    setEras();
     if (timeView()) {
       setPadl();
       state.ppy = clamp(state.ppy, fitPpy(), MAX_PPY);
@@ -671,7 +699,7 @@
     return `<div class="tags">${names.map((n) => `<button type="button" class="tag ${kind === 'char' ? ROLE[n] || '' : ''}" data-${kind}="${esc(n)}">${esc(n)}</button>`).join('')}</div>`;
   }
   function badge(text, color, extra = '') { return `<span class="badge ${extra}" style="--c:${color}">${esc(text)}</span>`; }
-  function pubColor(p) { return p === 'dc' ? 'var(--dc)' : p === 'marvel' ? 'var(--marvel)' : isSpot(p) ? 'var(--spot)' : 'var(--cross)'; }
+  function pubColor(p) { return p === 'dc' ? 'var(--dc)' : p === 'marvel' ? 'var(--marvel)' : p === 'manga' ? 'var(--manga)' : isSpot(p) ? 'var(--spot)' : 'var(--cross)'; }
   const TYPE_COLOR = { first: 'var(--t-first)', launch: 'var(--t-launch)', key: 'var(--t-key)', event: 'var(--t-event)', tiein: 'var(--t-tiein)', milestone: 'var(--t-milestone)' };
 
   function openItem(id) {
@@ -741,10 +769,11 @@
       h += `<div class="d-actions"><button type="button" class="btn" data-event="${esc(it.event)}">Show only this event</button><button type="button" class="btn ghost" data-act="edit" data-id="${esc(it.id)}">Edit details</button></div>`;
     } else {
       const ser = seriesOf(it);
-      if (ser) h += metronInfoHtml(it.metron) + seriesLinkHtml(ser, ISSUE_AT.get(it.metron)[1]) + issueNavHtml(ser, ISSUE_AT.get(it.metron)[1]);
+      if (ser && ser.pub === 'manga') h += mangaInfoHtml(ser);
+      else if (ser) h += metronInfoHtml(it.metron) + seriesLinkHtml(ser, ISSUE_AT.get(it.metron)[1]) + issueNavHtml(ser, ISSUE_AT.get(it.metron)[1]);
       h += `<div class="d-actions">${ser ? `<button type="button" class="btn" data-series="${ser.id}">See the whole series</button>` : ''}<button type="button" class="btn ghost" data-act="locate" data-id="${esc(it.id)}">Show on timeline</button><button type="button" class="btn ghost" data-act="edit" data-id="${esc(it.id)}">Edit details</button></div>`;
     }
-    const lookup = encodeURIComponent(`${label(it)} ${String(it.date).slice(0, 4)} ${it.publisher === 'dc' ? 'DC' : 'Marvel'} comic`);
+    const lookup = encodeURIComponent(`${label(it)} ${String(it.date).slice(0, 4)} ${it.publisher === 'dc' ? 'DC comic' : it.publisher === 'manga' ? 'manga' : 'Marvel comic'}`);
     h += `<p class="d-note">Look it up: <a href="https://www.google.com/search?q=${lookup}" target="_blank" rel="noopener">web search</a> · <a href="https://www.google.com/search?tbm=isch&q=${lookup}%20cover" target="_blank" rel="noopener">cover images</a></p>`;
     return h;
   }
@@ -922,6 +951,20 @@
   // Every series is one row on the shared time axis; each issue sits at its
   // cover date. Drawn on a canvas because a full run can be 1,000+ issues.
   const SERIES = (T.series || []).filter((s) => s.issues && s.issues.length);
+  // Manga runs: one row per series, from its first chapter to its last
+  // (or today), with the collected volume count. Per-volume dates aren't in the data.
+  ((T.manga && T.manga.series) || []).forEach((m) => {
+    const id = 'manga-' + slug(m.title);
+    SERIES.push({
+      id, name: `${m.title} (${m.start.slice(0, 4)})`, pub: 'manga', type: 'Manga', began: +m.start.slice(0, 4),
+      end: m.end ? +m.end.slice(0, 4) : null, count: m.volumes || 0,
+      countLabel: m.volumes ? `${m.volumes} vol${m.volumes === 1 ? '' : 's'}` : m.end ? '' : 'running',
+      issues: [[id, '1', m.start, '']], magazine: m.magazine,
+      runEnd: m.end ? toYear(m.end) + 1 / 12 : new Date().getFullYear() + 1, manga: m
+    });
+  });
+  const sidOf = (v) => (/^\d+$/.test(String(v)) ? +v : String(v));
+  const imgUrl = (p) => (!p ? '' : /^https?:/.test(p) ? p : (T.imgBase || '') + p);
   const SERIES_BY_ID = new Map();
   const ISSUE_AT = new Map(); // Metron issue id -> [series, index]
   const ARCS_OF = new Map(); // Metron issue id -> [event ids]
@@ -954,6 +997,11 @@
   ];
   const FAMILY_ORDER = [...FAMILIES.filter((f) => f[0] === 'marvel').map((f) => f[1]), 'Marvel events & minis', 'More Marvel',
     'Marvel × DC', ...FAMILIES.filter((f) => f[0] === 'dc').map((f) => f[1]), 'DC events & minis', 'More DC'];
+  {
+    const mags = new Map();
+    SERIES.forEach((s) => { if (s.pub === 'manga') mags.set(s.magazine, (mags.get(s.magazine) || 0) + 1); });
+    FAMILY_ORDER.push(...[...mags].sort((a, b) => b[1] - a[1]).map(([m]) => m));
+  }
   const SV = { rows: [], headerH: 0, contentH: 0, evRows: [], hover: null, sel: null, selSeries: null, colors: null, raf: 0, imgs: new Map(), fit: new Map() };
   state.svGroup = saved.svGroup || 'family';
   state.svOneShots = false;
@@ -963,7 +1011,7 @@
       SERIES_BY_ID.set(s.id, s);
       s.ys = s.issues.map((i) => toYear(i[2]));
       s.y0 = s.ys[0];
-      s.y1 = s.ys[s.ys.length - 1] + 1 / 12;
+      s.y1 = Math.max(s.ys[s.ys.length - 1] + 1 / 12, s.runEnd || 0);
       s.title = String(s.name || '').replace(/\s*\(\d{4}\)\s*$/, '');
       const endY = s.end || Math.floor(s.ys[s.ys.length - 1]);
       s.years = s.end == null && s.y1 > new Date().getFullYear() - 0.2 ? `${s.began || Math.floor(s.y0)}–now` : (s.began || Math.floor(s.y0)) === endY ? String(endY) : `${s.began || Math.floor(s.y0)}–${endY}`;
@@ -1008,7 +1056,7 @@
     KEY_AT.clear();
     SERIES.forEach((s) => { s.keys = []; s.chars.clear(); s.creators.clear(); });
     ITEMS.forEach((it) => {
-      const id = (T.links || {})[coverKey(it)];
+      const id = it.mangaId || (T.links || {})[coverKey(it)];
       if (!id) return;
       it.metron = id;
       KEY_AT.set(id, it);
@@ -1024,13 +1072,13 @@
       s.creditNames.forEach((c) => s.creators.add(c));
       s.hay = [s.name, ...s.keys.map((k) => k.hay)].join(' ').toLowerCase();
       const fam = s.pub === 'crossover' ? 'Marvel × DC' : (FAMILIES.find((f) => f[0] === s.pub && f[2].test(s.title)) || [])[1];
-      s.family = fam || (s.keys.length || !s.events.size ? (s.pub === 'dc' ? 'More DC' : 'More Marvel') : (s.pub === 'dc' ? 'DC events & minis' : 'Marvel events & minis'));
+      s.family = s.pub === 'manga' ? s.magazine : fam || (s.keys.length || !s.events.size ? (s.pub === 'dc' ? 'More DC' : 'More Marvel') : (s.pub === 'dc' ? 'DC events & minis' : 'Marvel events & minis'));
     });
   }
   const seriesOf = (it) => (it && it.metron && ISSUE_AT.get(it.metron) ? ISSUE_AT.get(it.metron)[0] : null);
 
   function seriesMatches(s) {
-    if (state.pub !== 'both' && s.pub !== state.pub && s.pub !== 'crossover') return false;
+    if (state.pub !== 'both' && s.pub !== state.pub && (s.pub !== 'crossover' || state.pub === 'manga')) return false;
     if (state.event) return s.events.has(state.event);
     if (!state.svOneShots && s.issues.length < 2 && !s.keys.length && !state.q) return false;
     if (state.char && HERO_SETS.has(state.char)) {
@@ -1099,7 +1147,7 @@
 
   function svColors() {
     const c = {};
-    ['--bg', '--surface', '--raised', '--ink', '--muted', '--faint', '--line', '--stripe', '--marvel', '--dc', '--cross', '--t-first', '--t-launch', '--t-key', '--t-event', '--t-tiein', '--t-milestone', '--focus'].forEach((n) => { c[n.slice(2)] = cssVar(n); });
+    ['--bg', '--surface', '--raised', '--ink', '--muted', '--faint', '--line', '--stripe', '--marvel', '--dc', '--cross', '--manga', '--t-first', '--t-launch', '--t-key', '--t-event', '--t-tiein', '--t-milestone', '--focus'].forEach((n) => { c[n.slice(2)] = cssVar(n); });
     return c;
   }
 
@@ -1131,7 +1179,7 @@
       rec.img.decoding = 'async';
       rec.img.referrerPolicy = 'no-referrer';
       rec.img.onload = () => { rec.ok = true; scheduleSeriesDraw(); };
-      rec.img.src = IMG_BASE + path;
+      rec.img.src = imgUrl(path);
       SV.imgs.set(path, rec);
     }
     return rec;
@@ -1166,7 +1214,7 @@
     const LW = LABEL_W();
     const top = SV.headerH;
     const sx = (y) => X(y) - sl;
-    const pubC = { marvel: C.marvel, dc: C.dc, crossover: C.cross };
+    const pubC = { marvel: C.marvel, dc: C.dc, crossover: C.cross, manga: C.manga };
     const typeC = { first: C['t-first'], launch: C['t-launch'], key: C['t-key'], tiein: C['t-tiein'], event: C['t-event'], milestone: C['t-milestone'] };
     // What to light up: an event's reading order, a hero's appearances, or a creator's credits.
     const hlEvent = state.event || (SV.hover && SV.hover.kind === 'event' ? SV.hover.e.event : null);
@@ -1255,7 +1303,10 @@
       ctx.fillStyle = pc;
       ctx.globalAlpha = dim ? 0.12 : 0.35;
       const mid = cover ? y + 6 + th / 2 : y + r.h / 2;
-      ctx.fillRect(sx(s.y0), mid - 1, Math.max(2, (s.y1 - s.y0) * state.ppy), 2);
+      // Manga rows have no per-volume dates, so their run is drawn as a solid bar.
+      const runH = s.pub === 'manga' ? 8 : 2;
+      if (s.pub === 'manga') ctx.globalAlpha = dim ? 0.15 : 0.55;
+      ctx.fillRect(sx(s.y0), mid - runH / 2, Math.max(2, (s.y1 - s.y0) * state.ppy), runH);
       ctx.globalAlpha = 1;
       // Issues in view
       const a = Math.max(0, firstAtOrAfter(s.ys, yMin - 1 / 12));
@@ -1298,7 +1349,7 @@
       ctx.textBaseline = 'middle';
       ctx.fillStyle = C.ink;
       ctx.font = `${isSel ? 700 : 600} 12px Archivo, sans-serif`;
-      const meta = `${s.years} · ${s.count}`;
+      const meta = s.countLabel != null ? (s.countLabel ? `${s.years} · ${s.countLabel}` : s.years) : `${s.years} · ${s.count}`;
       ctx.font = '10px "JetBrains Mono", monospace';
       const mw = ctx.measureText(meta).width;
       ctx.font = `${isSel ? 700 : 600} 12px Archivo, sans-serif`;
@@ -1428,7 +1479,7 @@
   }
 
   function issueCoverHtml(s, iss, cls = '') {
-    return `<span class="cv ${cls}" style="--h:${hash(s.title) % 360}"><span class="cv-brand">${esc(PUBS[s.pub] ? PUBS[s.pub].brand : '')}</span><span class="cv-title">${esc(s.title)}</span><span class="cv-num">#${esc(iss[1])}</span>${iss[3] ? `<img src="${esc(IMG_BASE + iss[3])}" alt="" loading="lazy" referrerpolicy="no-referrer">` : ''}</span>`;
+    return `<span class="cv ${cls}" style="--h:${hash(s.title) % 360}"><span class="cv-brand">${esc(PUBS[s.pub] ? PUBS[s.pub].brand : '')}</span><span class="cv-title">${esc(s.title)}</span><span class="cv-num">#${esc(iss[1])}</span>${iss[3] ? `<img src="${esc(imgUrl(iss[3]))}" alt="" loading="lazy" referrerpolicy="no-referrer">` : ''}</span>`;
   }
 
   function openIssue(s, idx) {
@@ -1472,7 +1523,17 @@
     return prev || next ? `<div class="d-actions">${prev}${next}</div>` : '';
   }
 
+  // A manga run's panel: no issue list, but the cover, magazine, volumes and creators.
+  function mangaInfoHtml(s) {
+    const m = s.manga;
+    let h = `<div class="d-sec"><h3>Ran in</h3><div>${esc(m.magazine)} · ${esc(s.years)}${m.volumes ? ` · ${m.volumes} volume${m.volumes === 1 ? '' : 's'}` : m.end ? '' : ' · still running'}</div></div>`;
+    const link = (MANGA_LINKS[m.title] || {}).url;
+    h += `<div class="d-actions"><button type="button" class="btn" data-series="${esc(s.id)}">See it in the Series view</button>${link ? `<a class="btn ghost" href="${esc(link)}" target="_blank" rel="noopener">AniList page</a>` : ''}</div>`;
+    return h;
+  }
+
   function openSeries(s) {
+    if (s.pub === 'manga') { const it = KEY_AT.get(s.issues[0][0]); SV.selSeries = s.id; if (it) openItem(it.id); scheduleSeriesDraw(); return; }
     SV.selSeries = s.id;
     SV.sel = null;
     const evs = [...s.events].map((id) => BYID['event-' + id]).filter(Boolean).sort((a, b) => a.y - b.y);
@@ -1487,7 +1548,7 @@
     h += `<div class="d-sec"><h3>Every issue</h3><div class="issue-grid">${s.issues.map((iss, i) => {
       const key = KEY_AT.get(iss[0]);
       const tie = ARCS_OF.has(iss[0]);
-      return `<button type="button" class="ig${key ? ' key t-' + key.type : ''}${tie ? ' tie' : ''}" data-issue="${s.id}:${i}" title="${esc(s.title)} #${esc(iss[1])} · ${esc(fmtDate(iss[2]))}">${iss[3] ? `<img src="${esc(IMG_BASE + iss[3])}" alt="" loading="lazy" referrerpolicy="no-referrer">` : ''}<span>#${esc(iss[1])}</span><i>${esc(fmtDate(iss[2]))}</i></button>`;
+      return `<button type="button" class="ig${key ? ' key t-' + key.type : ''}${tie ? ' tie' : ''}" data-issue="${s.id}:${i}" title="${esc(s.title)} #${esc(iss[1])} · ${esc(fmtDate(iss[2]))}">${iss[3] ? `<img src="${esc(imgUrl(iss[3]))}" alt="" loading="lazy" referrerpolicy="no-referrer">` : ''}<span>#${esc(iss[1])}</span><i>${esc(fmtDate(iss[2]))}</i></button>`;
     }).join('')}</div></div>`;
     h += `<div class="d-actions"><button type="button" class="btn" data-act="print-series" data-id="${s.id}">Print these covers</button></div>`;
     h += `<p class="d-note">Purple outline: part of an event. Gold, green or white outline: a key moment on the timeline. Data from <a href="https://metron.cloud" target="_blank" rel="noopener">Metron</a>.</p>`;
@@ -1503,7 +1564,7 @@
 
   // Jump to a series' row in the series view and open it.
   function showSeries(id) {
-    const s = SERIES_BY_ID.get(+id);
+    const s = SERIES_BY_ID.get(sidOf(id));
     if (!s) return;
     if (state.view !== 'series') { state.view = 'series'; refresh(); }
     if (!SV.list.includes(s)) { clearAll(); }
@@ -1512,12 +1573,60 @@
     if (row) stage.scrollTo({ top: Math.max(0, row.off - 80), left: Math.max(0, X(s.y0) - LABEL_W() - 60), behavior: 'smooth' });
   }
 
+  // ── Manga covers from AniList ────────────────────────────────────
+  // The browser asks AniList's public API for each series' cover and keeps
+  // the answers, so it only asks once. Offline, manga keeps drawn covers.
+  const ANILIST = 'https://graphql.anilist.co';
+  const MANGA_LINKS = store.get('anilist', {});
+  function applyMangaCovers() {
+    ((T.manga && T.manga.series) || []).forEach((m) => {
+      const hit = MANGA_LINKS[m.title];
+      if (!hit || !hit.cover) return;
+      const id = 'manga-' + slug(m.title);
+      if (BYID[id]) BYID[id].cover = hit.cover;
+      const s = SERIES_BY_ID.get(id);
+      if (s) s.issues[0][3] = hit.cover;
+    });
+  }
+  async function loadMangaCovers() {
+    const week = 7 * 24 * 3600 * 1000;
+    const todo = ((T.manga && T.manga.series) || []).filter((m) => {
+      const hit = MANGA_LINKS[m.title];
+      return !hit || (!hit.cover && Date.now() - (hit.at || 0) > week);
+    });
+    if (!todo.length || !window.fetch) return;
+    let got = 0;
+    for (let i = 0; i < todo.length; i += 25) {
+      const chunk = todo.slice(i, i + 25);
+      const query = 'query{' + chunk.map((m, j) => `m${j}:Page(perPage:6){media(search:${JSON.stringify(m.search || m.title)},type:MANGA,sort:SEARCH_MATCH){siteUrl format startDate{year} coverImage{extraLarge large}}}`).join(' ') + '}';
+      let data;
+      try {
+        const res = await fetch(ANILIST, { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify({ query }) });
+        if (!res.ok) break;
+        data = (await res.json()).data || {};
+      } catch (e) { break; }
+      chunk.forEach((m, j) => {
+        const year = +m.start.slice(0, 4);
+        const opts = (data['m' + j] && data['m' + j].media) || [];
+        // The right series started within a year of ours and isn't a novel.
+        const pick = opts.find((o) => o.startDate && o.startDate.year && Math.abs(o.startDate.year - year) <= 1 && o.format !== 'NOVEL')
+          || opts.find((o) => o.format === 'MANGA' && !(o.startDate && o.startDate.year));
+        MANGA_LINKS[m.title] = pick ? { cover: pick.coverImage.extraLarge || pick.coverImage.large, url: pick.siteUrl } : { at: Date.now() };
+        if (pick) got++;
+      });
+      store.set('anilist', MANGA_LINKS);
+      // Stay well inside AniList's rate limit.
+      await new Promise((r) => setTimeout(r, 2500));
+    }
+    if (got) { applyMangaCovers(); if (state.view !== 'series' || state.pub === 'manga' || state.pub === 'both') refresh(); }
+  }
+
   // ── Print sheet ──────────────────────────────────────────────────
   // Lays out covers in a paper-sized grid. The browser's print dialog can
   // print it or save it as a PDF.
   const PRINT_MAX = 500;
   const PR = { title: '', sub: '', entries: [] };
-  const issueEntry = (s, idx) => ({ img: s.issues[idx][3] ? IMG_BASE + s.issues[idx][3] : '', title: s.title, num: s.issues[idx][1], date: s.issues[idx][2], y: s.ys[idx], pub: s.pub });
+  const issueEntry = (s, idx) => ({ img: imgUrl(s.issues[idx][3]), title: s.title, num: s.issues[idx][1], date: s.issues[idx][2], y: s.ys[idx], pub: s.pub });
   const itemEntry = (it) => ({ img: it.cover || '', title: it.title, num: it.issue, date: it.date, y: it.y, pub: it.publisher });
   const byDate = (a, b) => a.y - b.y;
 
@@ -1662,7 +1771,7 @@
     }
     if (t.dataset.issue) {
       const [sid, idx] = t.dataset.issue.split(':');
-      const s = SERIES_BY_ID.get(+sid);
+      const s = SERIES_BY_ID.get(sidOf(sid));
       if (s) openIssue(s, +idx);
       return;
     }
@@ -1706,7 +1815,7 @@
       case 'delete': removeAdded(t.dataset.id); break;
       case 'locate': locate(t.dataset.id); break;
       case 'print-series': {
-        const s = SERIES_BY_ID.get(+t.dataset.id);
+        const s = SERIES_BY_ID.get(sidOf(t.dataset.id));
         if (s) openPrint({ title: s.title, sub: `${s.years} · every issue`, entries: s.issues.map((iss, i) => issueEntry(s, i)) });
         break;
       }
@@ -1916,4 +2025,5 @@
   if (!saved.ppy) setZoom(Math.max(fitPpy(), 12), 0);
   if (timeView()) stage.scrollLeft = saved.ppy ? X(1938) - 40 : 0;
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(drawMinimap);
+  loadMangaCovers();
 })();

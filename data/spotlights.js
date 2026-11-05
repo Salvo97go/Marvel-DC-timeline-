@@ -104,5 +104,90 @@ window.TIMELINE.spotlights = [
       { date: '2020-08', title: 'Dark Nights: Death Metal', issue: '1', type: 'key', event: 'death-metal', from: 'DC', characters: ['Wonder Woman', 'Batman'], writers: ['Scott Snyder'], summary: 'The sequel to Metal, which ends with all of DC\'s past continuity counted as canon.' },
       { date: '2025-09', title: 'Deadpool/Batman', issue: '1', type: 'key', from: 'Marvel', characters: ['Deadpool', 'Batman'], writers: ['Zeb Wells'], summary: 'The first new Marvel and DC crossover in more than 20 years.' }
     ]
+  },
+  {
+    id: 'tezuka',
+    world: 'manga',
+    name: 'Osamu Tezuka',
+    born: '1928-11',
+    died: '1989-02',
+    role: 'Artist & writer',
+    birthplace: 'Toyonaka, Osaka',
+    summary: 'The "god of manga," and Japan\'s Kirby and Disney in one. A trained doctor, Tezuka brought film techniques to manga after the war, created Astro Boy, Kimba and Black Jack, founded the studio behind Japan\'s first weekly TV anime, and drew around 150,000 pages. Almost every later manga artist works in the visual language he built.',
+    works: [
+      { date: '1946-01', title: 'Diary of Ma-chan', issue: '', type: 'first', from: 'Shōkokumin Shimbun', summary: 'His professional debut, a four-panel strip in a children\'s newspaper, drawn while he was a medical student.' },
+      { date: '1947-01', title: 'New Treasure Island', issue: '', type: 'key', from: 'Akahon (book)', summary: 'The cinematic adventure book that started the postwar manga boom.' },
+      { date: '1950-11', title: 'Kimba the White Lion', issue: '', type: 'key', from: 'Manga Shōnen', characters: ['Kimba'], summary: 'His jungle epic.' },
+      { date: '1952-04', title: 'Astro Boy', issue: '', type: 'key', from: 'Shōnen (Kobunsha)', characters: ['Astro Boy'], summary: 'His most famous character, a robot boy built to replace a dead son.' },
+      { date: '1953-01', title: 'Princess Knight', issue: '', type: 'key', from: 'Shōjo Club', characters: ['Sapphire'], summary: 'A pioneering story manga for girls.' },
+      { date: '1954-07', title: 'Phoenix', issue: '', type: 'key', from: 'Manga Shōnen, COM and others', summary: 'His lifelong masterwork, left unfinished at his death.' },
+      { date: '1963-01', title: 'Astro Boy (TV anime)', issue: '', type: 'milestone', from: 'Mushi Production', characters: ['Astro Boy'], summary: 'His studio makes Japan\'s first weekly anime series, and NBC buys it for American TV.' },
+      { date: '1967-01', title: 'COM magazine', issue: '', type: 'milestone', from: 'Mushi Pro Shōji', summary: 'He launches an artist-driven magazine, partly to run Phoenix and answer the gekiga movement.' },
+      { date: '1972-09', title: 'Buddha', issue: '', type: 'key', from: 'Kibō no Tomo', summary: 'An epic life of the Buddha.' },
+      { date: '1973-11', title: 'Black Jack', issue: '', type: 'key', from: 'Weekly Shōnen Champion', characters: ['Black Jack'], summary: 'His comeback after his studio went bankrupt. An unlicensed genius surgeon.' },
+      { date: '1983-01', title: 'Adolf', issue: '', type: 'key', from: 'Shūkan Bunshun', summary: 'Three men named Adolf in World War II. Among his most mature work, aimed at adults.' },
+      { date: '1989-02', title: 'Dies', issue: '', type: 'milestone', from: '', summary: 'Osamu Tezuka dies on February 9, 1989, at 60. His last words are said to have been "Please, let me work."' }
+    ]
+  },
+  {
+    id: 'toriyama',
+    world: 'manga',
+    name: 'Akira Toriyama',
+    born: '1955-04',
+    died: '2024-03',
+    role: 'Artist & writer',
+    birthplace: 'Nagoya, Aichi',
+    summary: 'The creator of Dr. Slump and Dragon Ball, and character designer of the Dragon Quest and Chrono Trigger games. His clean, playful style and Dragon Ball\'s fight-train-fight-again structure became the template for decades of shōnen manga, and Dragon Ball Z\'s anime turned millions of kids worldwide into manga readers.',
+    works: [
+      { date: '1978-12', title: 'Wonder Island', issue: '', type: 'first', from: 'Weekly Shōnen Jump', summary: 'His debut, after his editor Kazuhiko Torishima rejected hundreds of pages.' },
+      { date: '1980-01', title: 'Dr. Slump', issue: '', type: 'key', from: 'Weekly Shōnen Jump', characters: ['Arale'], summary: 'His first hit, a gag comedy about a robot girl.' },
+      { date: '1984-12', title: 'Dragon Ball', issue: '', type: 'key', from: 'Weekly Shōnen Jump', characters: ['Goku'], summary: 'Started as a comedy riff on Journey to the West and became the most influential fighting manga ever.' },
+      { date: '1986-05', title: 'Dragon Quest', issue: '', type: 'key', from: 'Video game (Enix)', summary: 'His character and monster designs for the role-playing game series that became a national obsession.' },
+      { date: '1989-04', title: 'Dragon Ball Z (TV anime)', issue: '', type: 'milestone', from: 'Toei Animation', characters: ['Goku'], summary: 'The anime of the second half of Dragon Ball. Its later American run made it a worldwide phenomenon.' },
+      { date: '1995-03', title: 'Chrono Trigger', issue: '', type: 'key', from: 'Video game (Square)', summary: 'Character designs for one of the most acclaimed role-playing games ever.' },
+      { date: '1995-06', title: 'Dragon Ball ends', issue: '', type: 'milestone', from: 'Weekly Shōnen Jump', summary: 'Jump\'s circulation starts falling soon after.' },
+      { date: '2000-05', title: 'Sand Land', issue: '', type: 'key', from: 'Weekly Shōnen Jump', summary: 'A short desert adventure with a tank-driving old sheriff.' },
+      { date: '2015-06', title: 'Dragon Ball Super', issue: '', type: 'key', from: 'V Jump', characters: ['Goku'], summary: 'He writes the story for a new Dragon Ball series drawn by Toyotarou.' },
+      { date: '2024-03', title: 'Dies', issue: '', type: 'milestone', from: '', summary: 'Akira Toriyama dies on March 1, 2024, at 68.' }
+    ]
+  },
+  {
+    id: 'otomo',
+    world: 'manga',
+    name: 'Katsuhiro Otomo',
+    born: '1954-04',
+    died: null,
+    role: 'Artist & writer',
+    birthplace: 'Tome, Miyagi',
+    summary: 'The artist who made manga look real. Otomo\'s detailed cities, ordinary-looking faces and huge destruction scenes changed how a generation drew, in Japan and the West. Akira, as manga and as his own 1988 film, was the gateway to Japanese comics for many Americans, and Marvel published it in color.',
+    works: [
+      { date: '1973-10', title: 'A Gun Report', issue: '', type: 'first', from: 'Weekly Manga Action', summary: 'His debut, an adaptation of a Prosper Mérimée story.' },
+      { date: '1979', title: 'Fireball', issue: '', type: 'key', from: 'Action Deluxe', summary: 'An unfinished story about a city-controlling computer. A rough draft of ideas in Akira.' },
+      { date: '1980-01', title: 'Domu: A Child\'s Dream', issue: '', type: 'key', from: 'Action Deluxe', summary: 'A psychic battle in a housing complex. The first manga to win the Japan SF Grand Prize.' },
+      { date: '1982-12', title: 'Akira', issue: '', type: 'key', from: 'Young Magazine', characters: ['Kaneda', 'Tetsuo'], summary: 'His masterpiece. It ran until 1990.' },
+      { date: '1988-07', title: 'Akira (film)', issue: '', type: 'milestone', from: 'Film', characters: ['Kaneda', 'Tetsuo'], summary: 'He directs the film himself before finishing the manga. It introduces many Westerners to anime.' },
+      { date: '1995-12', title: 'Memories', issue: '', type: 'key', from: 'Film', summary: 'An anthology film based on his short stories.' },
+      { date: '2004-07', title: 'Steamboy', issue: '', type: 'key', from: 'Film', summary: 'A steampunk film a decade in the making.' },
+      { date: '2015-01', title: 'Angoulême Grand Prix', issue: '', type: 'milestone', from: 'Angoulême festival', summary: 'He wins the top lifetime award at Europe\'s biggest comics festival, the first Japanese artist to do so.' }
+    ]
+  },
+  {
+    id: 'kishimoto',
+    world: 'manga',
+    name: 'Masashi Kishimoto',
+    born: '1974-11',
+    died: null,
+    role: 'Artist & writer',
+    birthplace: 'Okayama',
+    summary: 'The creator of Naruto. He grew up on Dragon Ball and Akira, and Naruto mixed Toriyama\'s energy with Otomo-style detail and Western influences. Its 15-year run and anime made it one of the "big three" with One Piece and Bleach that put manga at the center of American bookstores in the 2000s.',
+    works: [
+      { date: '1995', title: 'Karakuri', issue: '', type: 'first', from: 'Hop Step Award', summary: 'An honorable mention in Jump\'s contest for new artists.' },
+      { date: '1997', title: 'Naruto (one-shot)', issue: '', type: 'key', from: 'Akamaru Jump', characters: ['Naruto Uzumaki'], summary: 'A one-shot pilot about a fox spirit boy. Very different from the series that followed.' },
+      { date: '1999-09', title: 'Naruto', issue: '', type: 'key', from: 'Weekly Shōnen Jump', characters: ['Naruto Uzumaki'], summary: 'The series begins.' },
+      { date: '2002-10', title: 'Naruto (TV anime)', issue: '', type: 'milestone', from: 'Studio Pierrot', characters: ['Naruto Uzumaki'], summary: 'The anime starts; its US run from 2005 makes Naruto a worldwide hit.' },
+      { date: '2014-11', title: 'Naruto ends', issue: '', type: 'milestone', from: 'Weekly Shōnen Jump', characters: ['Naruto Uzumaki'], summary: 'The final chapter, after 700 chapters and 72 volumes.' },
+      { date: '2016-05', title: 'Boruto: Naruto Next Generations', issue: '', type: 'key', from: 'Weekly Shōnen Jump', characters: ['Boruto'], summary: 'The sequel about Naruto\'s son, which he supervises and later writes.' },
+      { date: '2019-05', title: 'Samurai 8', issue: '', type: 'key', from: 'Weekly Shōnen Jump', summary: 'A sci-fi samurai series he writes, drawn by Akira Okubo. Cancelled after a year.' }
+    ]
   }
 ];
