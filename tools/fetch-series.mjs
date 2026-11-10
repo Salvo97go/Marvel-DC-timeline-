@@ -157,7 +157,8 @@ const ALIASES = {
   'Vengeance of Bane': ['Batman: Vengeance of Bane Special'], 'DC Countdown': ['Countdown to Infinite Crisis'],
   'All-Star Superman': ['All Star Superman'],
   'Marvel and DC Present': ['Marvel and DC Present Featuring The Uncanny X-Men and The New Teen Titans'],
-  'Deadpool/Batman': ['Marvel / DC: Deadpool / Batman'], 'Batman/Deadpool': ['DC / Marvel: Batman / Deadpool']
+  'Deadpool/Batman': ['Marvel / DC: Deadpool / Batman'], 'Batman/Deadpool': ['DC / Marvel: Batman / Deadpool'],
+  'Captain America and the Falcon': ['Captain America'], 'All-New Captain America': ['All-New Captain America']
 };
 const keyOf = (pub, it) => [pub, it.title, it.issue || '', it.date].join('|');
 async function core() {
