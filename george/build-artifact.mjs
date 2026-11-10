@@ -7,6 +7,9 @@ const html = read('index.html');
 const head = html.match(/<title>[\s\S]*?(?=<link rel="stylesheet" href="styles.css">)/)[0];
 const body = html.match(/<!--BODY-->([\s\S]*?)<!--\/BODY-->/)[1];
 const safe = (js) => js.replace(/<\/script/gi, '<\\/script');
-const out = `${head}<style>\n${read('styles.css')}\n</style>\n${body}\n<script>\n${safe(read('data.js'))}\n</script>\n<script>\n${safe(read('app.js'))}\n</script>\n`;
+// Cover files under covers/ are embedded as data: URIs so the page is self-contained.
+const inlineCovers = (js) => js.replace(/img: "(covers\/[^"]+\.(jpe?g|png|webp))"/g, (m, f, ext) =>
+  `img: "data:image/${ext === 'jpg' ? 'jpeg' : ext};base64,${readFileSync(new URL(f, here)).toString('base64')}"`);
+const out = `${head}<style>\n${read('styles.css')}\n</style>\n${body}\n<script>\n${safe(inlineCovers(read('data.js')))}\n</script>\n<script>\n${safe(read('app.js'))}\n</script>\n`;
 writeFileSync(process.argv[2] || 'george-artifact.html', out);
 console.log('wrote', process.argv[2], out.length, 'bytes');

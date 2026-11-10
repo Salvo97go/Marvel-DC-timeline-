@@ -23,4 +23,6 @@ Same idea as Longbox in the folder above, rebuilt for one magazine. No build ste
 
 ## About the data
 
-Researched from news coverage (Spokesman-Review, Seattle Times, CNN, ABC News, People), retrospectives, and back-issue listings. Seven covers are still unidentified (Sep 1996, Mar 1997, Apr 1997, May 1998, Sep 1998, Feb 1999, Dec 2000/Jan 2001), and the farewell issue's cover date is disputed. No cover images are bundled: add an `img` URL to an issue in `data.js` and the app uses it, falling back to a drawn cover if the image won't load.
+Researched from news coverage (Spokesman-Review, Seattle Times, CNN, ABC News, People, Today, Vice), Wikipedia, an Internet Archive scan, and back-issue listings. 15 covers are confirmed, 40 come from listings only, and two are still unidentified (Sep 1998, Dec 2000/Jan 2001). The farewell issue is dated March 2001, per CNN and ABC News reports of the closure.
+
+Two real covers are bundled in `covers/`: the premiere (from Wikipedia) and February 1997 (from the Internet Archive scan). Other issues show a drawn cover. To add one, put the image in `covers/` and set `img: "covers/<date>.jpg"` on the issue, or use any image URL.
