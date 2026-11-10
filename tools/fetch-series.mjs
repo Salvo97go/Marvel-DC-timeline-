@@ -62,7 +62,7 @@ for (const k of ['catalog', 'catalogDone', 'core', 'arcs', 'lists', 'heroes', 'e
 
 // Characters whose every appearance is pulled in, and the creators whose
 // credits are tracked. Names must match Metron's.
-const HEROES = ['Batman', 'Spider-Man'];
+const HEROES = ['Batman', 'Spider-Man', 'Captain America'];
 const CREATORS = [
   // Batman
   'Bob Kane', 'Bill Finger', 'Jerry Robinson', 'Dick Sprang', 'Sheldon Moldoff', 'Carmine Infantino', 'Gardner Fox',
@@ -77,10 +77,13 @@ const CREATORS = [
   'Roger Stern', 'John Romita Jr.', 'Tom DeFalco', 'Ron Frenz', 'Sal Buscema', 'Peter David', 'J.M. DeMatteis', 'Mike Zeck',
   'David Michelinie', 'Todd McFarlane', 'Erik Larsen', 'Mark Bagley', 'Howard Mackie', 'Paul Jenkins', 'J. Michael Straczynski',
   'Mike Deodato', 'Dan Slott', 'Humberto Ramos', 'Marcos Martín', 'Brian Michael Bendis', 'Sara Pichelli', 'Nick Spencer',
-  'Ryan Ottley', 'Zeb Wells', 'Jonathan Hickman', 'Marco Checchetto'
+  'Ryan Ottley', 'Zeb Wells', 'Jonathan Hickman', 'Marco Checchetto',
+  // Captain America
+  'Joe Simon', 'Jack Kirby', 'Jim Steranko', 'Gene Colan', 'Mark Gruenwald', 'Kieron Dwyer', 'John Byrne', 'Mark Waid',
+  'Ron Garney', 'Dan Jurgens', 'Steve Epting', 'Rick Remender', 'Ta-Nehisi Coates', 'Leinil Francis Yu', 'Jesús Saiz', 'Chris Samnee'
 ];
 // Metron's spelling, where it differs from the name used in the app.
-const CREATOR_SEARCH = { "Denny O'Neil": ["Dennis O'Neil", "Denny O'Neil"], 'J.M. DeMatteis': ['J.M. DeMatteis', 'J. M. DeMatteis'], 'Marcos Martín': ['Marcos Martin'], 'Mikel Janín': ['Mikel Janin'], 'Tony S. Daniel': ['Tony Daniel'], 'Jorge Jiménez': ['Jorge Jimenez'] };
+const CREATOR_SEARCH = { "Denny O'Neil": ["Dennis O'Neil", "Denny O'Neil"], 'J.M. DeMatteis': ['J.M. DeMatteis', 'J. M. DeMatteis'], 'Marcos Martín': ['Marcos Martin'], 'Mikel Janín': ['Mikel Janin'], 'Tony S. Daniel': ['Tony Daniel'], 'Leinil Francis Yu': ['Leinil Yu'], 'Jesús Saiz': ['Jesus Saiz'], 'Jorge Jiménez': ['Jorge Jimenez'] };
 const COLLECTED = /trade|hard ?cover|omnibus|digest|compendium|reprint/i;
 // Written often during a run; compression keeps the committed file small.
 let lastSave = 0;
