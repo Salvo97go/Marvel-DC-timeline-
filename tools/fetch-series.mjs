@@ -62,7 +62,7 @@ for (const k of ['catalog', 'catalogDone', 'core', 'arcs', 'lists', 'heroes', 'e
 
 // Characters whose every appearance is pulled in, and the creators whose
 // credits are tracked. Names must match Metron's.
-const HEROES = ['Batman', 'Spider-Man', 'Captain America'];
+const HEROES = ['Batman', 'Spider-Man', 'Captain America', 'Iron Man'];
 const CREATORS = [
   // Batman
   'Bob Kane', 'Bill Finger', 'Jerry Robinson', 'Dick Sprang', 'Sheldon Moldoff', 'Carmine Infantino', 'Gardner Fox',
@@ -80,10 +80,13 @@ const CREATORS = [
   'Ryan Ottley', 'Zeb Wells', 'Jonathan Hickman', 'Marco Checchetto',
   // Captain America
   'Joe Simon', 'Jack Kirby', 'Jim Steranko', 'Gene Colan', 'Mark Gruenwald', 'Kieron Dwyer', 'John Byrne', 'Mark Waid',
-  'Ron Garney', 'Dan Jurgens', 'Steve Epting', 'Rick Remender', 'Ta-Nehisi Coates', 'Leinil Francis Yu', 'Jesús Saiz', 'Chris Samnee'
+  'Ron Garney', 'Dan Jurgens', 'Steve Epting', 'Rick Remender', 'Ta-Nehisi Coates', 'Leinil Francis Yu', 'Jesús Saiz', 'Chris Samnee',
+  // Iron Man
+  'Don Heck', 'Archie Goodwin', 'George Tuska', 'Bob Layton', 'Mark Bright', 'Len Kaminski', 'Kurt Busiek', 'Sean Chen',
+  'Warren Ellis', 'Adi Granov', 'Matt Fraction', 'Salvador Larroca', 'Kieron Gillen', 'Christopher Cantwell', 'Valerio Schiti'
 ];
 // Metron's spelling, where it differs from the name used in the app.
-const CREATOR_SEARCH = { "Denny O'Neil": ["Dennis O'Neil", "Denny O'Neil"], 'J.M. DeMatteis': ['J.M. DeMatteis', 'J. M. DeMatteis'], 'Marcos Martín': ['Marcos Martin'], 'Mikel Janín': ['Mikel Janin'], 'Tony S. Daniel': ['Tony Daniel'], 'Leinil Francis Yu': ['Leinil Yu'], 'Jesús Saiz': ['Jesus Saiz'], 'Jorge Jiménez': ['Jorge Jimenez'] };
+const CREATOR_SEARCH = { "Denny O'Neil": ["Dennis O'Neil", "Denny O'Neil"], 'J.M. DeMatteis': ['J.M. DeMatteis', 'J. M. DeMatteis'], 'Marcos Martín': ['Marcos Martin'], 'Mikel Janín': ['Mikel Janin'], 'Tony S. Daniel': ['Tony Daniel'], 'Leinil Francis Yu': ['Leinil Yu'], 'Mark Bright': ['Mark D. Bright'], 'Jesús Saiz': ['Jesus Saiz'], 'Jorge Jiménez': ['Jorge Jimenez'] };
 const COLLECTED = /trade|hard ?cover|omnibus|digest|compendium|reprint/i;
 // Written often during a run; compression keeps the committed file small.
 let lastSave = 0;
