@@ -556,6 +556,58 @@ body[data-view="series"] #type-sec { display: none; }
   .ps-page { margin: 0; padding: 16px; }
   .ps-grid { grid-template-columns: repeat(min(var(--cols, 5), 3), minmax(0, 1fr)); }
 }
+/* Cover viewer */
+.cv-open { all: unset; position: relative; display: block; cursor: zoom-in; border-radius: 4px; }
+.cv-open:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+.cv-open::after {
+  content: "Flip ›"; position: absolute; right: 5px; bottom: 5px; z-index: 2;
+  font: 600 10px/1 var(--f-body); letter-spacing: 0.06em; text-transform: uppercase;
+  padding: 4px 6px; border-radius: 3px; background: rgba(8, 10, 14, 0.78); color: #fff;
+}
+.flip {
+  position: fixed; inset: 0; z-index: 70; display: grid; grid-template-rows: auto minmax(0, 1fr) auto auto; grid-template-columns: minmax(0, 1fr);
+  background: #0b0d11; color: #eceef2; outline: none;
+  padding: env(safe-area-inset-top, 0px) max(16px, env(safe-area-inset-right, 0px)) max(12px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+}
+.flip[hidden] { display: none; }
+.flip-top { display: flex; align-items: center; justify-content: space-between; padding: 10px 0 6px; }
+.flip-pos { font: 13px var(--f-mono); color: #a2a8b4; }
+.flip-x, .flip-nav {
+  display: grid; place-items: center; border: 0; border-radius: 50%; cursor: pointer;
+  background: rgba(255, 255, 255, 0.1); color: #fff;
+}
+.flip-x { width: 40px; height: 40px; }
+.flip-x svg, .flip-nav svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.flip-x:hover, .flip-nav:hover:not(:disabled) { background: rgba(255, 255, 255, 0.22); }
+.flip-nav { width: 56px; height: 56px; flex: none; }
+.flip-nav svg { width: 28px; height: 28px; }
+.flip-nav:disabled { opacity: 0.2; cursor: default; }
+.flip-stage { display: flex; align-items: center; justify-content: center; gap: 24px; min-height: 0; touch-action: pan-y; user-select: none; }
+.flip-cover { height: 100%; max-height: 100%; aspect-ratio: 2 / 3; min-width: 0; max-width: calc(100% - 160px); display: flex; align-items: center; justify-content: center; }
+.flip-cover .cv-big { width: 100%; height: auto; aspect-ratio: 2 / 3; max-height: 100%; border-radius: 6px; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5); }
+.flip-cover .cv-big img { object-fit: contain; background: #000; }
+.flip-cover .cv-big .cv-title { font-size: clamp(18px, 4vh, 34px); }
+.flip-cover .cv-big .cv-num { font-size: clamp(40px, 10vh, 90px); }
+.flip-cover .cv-big .cv-brand { font-size: 13px; }
+.flip-info { text-align: center; padding: 12px 0 4px; max-width: 70ch; margin: 0 auto; }
+.flip-info h2 { margin: 0; font: 28px/1.05 var(--f-display); text-transform: uppercase; text-wrap: balance; }
+.flip-info h2 span { color: #a2a8b4; }
+.flip-info p { margin: 6px 0 0; font-size: 14px; line-height: 1.5; color: #d4d7dd; }
+.flip-sub { margin-top: 4px; font: 12px var(--f-mono); color: #a2a8b4; }
+.flip-sub b { font-weight: 600; color: var(--c, #fff); }
+.flip-sub .t-first { --c: var(--t-first); } .flip-sub .t-launch { --c: var(--t-launch); } .flip-sub .t-key { --c: var(--t-key); }
+.flip-sub .t-tiein { --c: var(--t-tiein); } .flip-sub .t-milestone { --c: var(--t-milestone); }
+.flip-bar { display: flex; align-items: center; gap: 14px; padding: 10px 0 6px; max-width: 720px; width: 100%; margin: 0 auto; }
+.flip-bar input[type="range"] { flex: 1; min-width: 0; accent-color: #fff; }
+@media (max-width: 720px) {
+  .flip-stage { position: relative; gap: 0; }
+  .flip-cover { max-width: 100%; height: auto; width: 100%; }
+  .flip-nav { position: absolute; top: 50%; translate: 0 -50%; z-index: 2; width: 44px; height: 44px; background: rgba(8, 10, 14, 0.6); }
+  .flip-nav.prev { left: 0; } .flip-nav.next { right: 0; }
+  .flip-info h2 { font-size: 22px; }
+  .flip-info p { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+}
+
 @media print {
   @page { margin: 10mm; }
   html, body { height: auto !important; overflow: visible !important; display: block !important; background: #fff !important; }

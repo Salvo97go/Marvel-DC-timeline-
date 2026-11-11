@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
-<link rel="stylesheet" href="css/styles.css?v=202611111458">
+<link rel="stylesheet" href="css/styles.css?v=202611111601">
 </head>
 <body>
 <header class="top">
@@ -167,17 +167,34 @@
   </div>
 </div>
 
+<div class="flip" id="flip" tabindex="-1" role="dialog" aria-modal="true" aria-label="Cover viewer" hidden>
+  <div class="flip-top">
+    <span class="flip-pos" id="flip-pos"></span>
+    <button type="button" class="flip-x" id="flip-close" aria-label="Close cover viewer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  </div>
+  <div class="flip-stage" id="flip-stage">
+    <button type="button" class="flip-nav prev" id="flip-prev" aria-label="Previous cover"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+    <div class="flip-cover" id="flip-cover"></div>
+    <button type="button" class="flip-nav next" id="flip-next" aria-label="Next cover"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
+  </div>
+  <div class="flip-info" id="flip-info" aria-live="polite"></div>
+  <div class="flip-bar">
+    <input type="range" id="flip-range" min="0" max="0" value="0" aria-label="Jump to issue">
+    <button type="button" class="btn sm" id="flip-details">Details</button>
+  </div>
+</div>
+
 <div class="tip" id="tip" hidden></div>
 <div class="toast" id="toast" hidden></div>
 
-<script src="data/marvel.js?v=202611111458"></script>
-<script src="data/dc.js?v=202611111458"></script>
-<script src="data/events.js?v=202611111458"></script>
-<script src="data/crossovers.js?v=202611111458"></script>
-<script src="data/covers.js?v=202611111458"></script>
-<script src="data/series.js?v=202611111458"></script>
-<script src="data/spotlights.js?v=202611111458"></script>
-<script src="data/manga.js?v=202611111458"></script>
-<script src="js/app.js?v=202611111458"></script>
+<script src="data/marvel.js?v=202611111601"></script>
+<script src="data/dc.js?v=202611111601"></script>
+<script src="data/events.js?v=202611111601"></script>
+<script src="data/crossovers.js?v=202611111601"></script>
+<script src="data/covers.js?v=202611111601"></script>
+<script src="data/series.js?v=202611111601"></script>
+<script src="data/spotlights.js?v=202611111601"></script>
+<script src="data/manga.js?v=202611111601"></script>
+<script src="js/app.js?v=202611111601"></script>
 </body>
 </html>

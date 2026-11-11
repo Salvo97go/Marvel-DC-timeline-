@@ -725,7 +725,9 @@
 
   function detailHtml(it) {
     const ev = it.type === 'event' ? it : eventOf(it);
-    let h = `<div class="d-hero"><span class="pub-${it.publisher} t-${it.type}">${coverHtml(it, 'full')}</span>
+    const fser = it.type !== 'event' && seriesOf(it);
+    const flip = fser && fser.pub !== 'manga' ? `s:${fser.id}:${ISSUE_AT.get(it.metron)[1]}` : `i:${it.id}`;
+    let h = `<div class="d-hero"><button type="button" class="pub-${it.publisher} t-${it.type} cv-open" data-flip="${esc(flip)}" title="Flip through the covers">${coverHtml(it, 'full')}</button>
       <div class="d-meta">
         <div class="badges">${badge(PUBS[it.publisher].label, pubColor(it.publisher))}${badge(TYPES[it.type].short, TYPE_COLOR[it.type], 't-' + it.type)}${it.edited ? badge('Edited', 'var(--muted)') : ''}${it.added ? badge('Added by you', 'var(--muted)') : ''}</div>
         <h2 class="d-title">${esc(label(it))}</h2>
@@ -1489,7 +1491,7 @@
     const key = KEY_AT.get(iss[0]);
     if (key) { openItem(key.id); scheduleSeriesDraw(); return; }
     const evs = (ARCS_OF.get(iss[0]) || []).map((id) => BYID['event-' + id]).filter(Boolean);
-    let h = `<div class="d-hero"><span class="pub-${s.pub}">${issueCoverHtml(s, iss)}</span>
+    let h = `<div class="d-hero"><button type="button" class="pub-${s.pub} cv-open" data-flip="s:${s.id}:${idx}" title="Flip through the covers">${issueCoverHtml(s, iss)}</button>
       <div class="d-meta"><div class="badges">${badge(PUBS[s.pub].label, pubColor(s.pub))}${evs.length ? badge('Tie-in', 'var(--t-tiein)', 't-tiein') : ''}</div>
       <h2 class="d-title">${esc(s.title)} #${esc(iss[1])}</h2><div class="d-date">${esc(fmtDate(iss[2]))} cover date</div></div></div>`;
     h += seriesLinkHtml(s, idx);
@@ -1537,7 +1539,7 @@
     SV.selSeries = s.id;
     SV.sel = null;
     const evs = [...s.events].map((id) => BYID['event-' + id]).filter(Boolean).sort((a, b) => a.y - b.y);
-    let h = `<div class="d-hero"><span class="pub-${s.pub}">${issueCoverHtml(s, s.issues[0])}</span>
+    let h = `<div class="d-hero"><button type="button" class="pub-${s.pub} cv-open" data-flip="s:${s.id}:0" title="Flip through the covers">${issueCoverHtml(s, s.issues[0])}</button>
       <div class="d-meta"><div class="badges">${badge(PUBS[s.pub].label, pubColor(s.pub))}${s.type ? badge(s.type, 'var(--muted)') : ''}</div>
       <h2 class="d-title">${esc(s.title)}</h2><div class="d-date">${esc(s.years)} · ${s.count} issues${s.issues.length < s.count ? ` (${s.issues.length} dated)` : ''}</div>
       <div class="d-date">${esc(s.family)}</div></div></div>`;
@@ -1550,7 +1552,7 @@
       const tie = ARCS_OF.has(iss[0]);
       return `<button type="button" class="ig${key ? ' key t-' + key.type : ''}${tie ? ' tie' : ''}" data-issue="${s.id}:${i}" title="${esc(s.title)} #${esc(iss[1])} · ${esc(fmtDate(iss[2]))}">${iss[3] ? `<img src="${esc(imgUrl(iss[3]))}" alt="" loading="lazy" referrerpolicy="no-referrer">` : ''}<span>#${esc(iss[1])}</span><i>${esc(fmtDate(iss[2]))}</i></button>`;
     }).join('')}</div></div>`;
-    h += `<div class="d-actions"><button type="button" class="btn" data-act="print-series" data-id="${s.id}">Print these covers</button></div>`;
+    h += `<div class="d-actions"><button type="button" class="btn" data-flip="s:${s.id}:0">Flip through covers</button><button type="button" class="btn ghost" data-act="print-series" data-id="${s.id}">Print these covers</button></div>`;
     h += `<p class="d-note">Purple outline: part of an event. Gold, green or white outline: a key moment on the timeline. Data from <a href="https://metron.cloud" target="_blank" rel="noopener">Metron</a>.</p>`;
     showDrawer(h);
     scheduleSeriesDraw();
@@ -1561,6 +1563,106 @@
     drawer.hidden = false;
     drawer.scrollTop = 0;
   }
+
+  // ── Cover viewer ─────────────────────────────────────────────────
+  // Full-screen covers, one at a time: arrows, keys, swipe or the slider
+  // step through a whole series (or whatever the timeline is showing).
+  const FLIP = { list: [], i: 0, start: 0 };
+  const flipEl = $('#flip');
+  function flipSeriesEntries(s) {
+    return s.issues.map((iss, i) => ({
+      cover: () => issueCoverHtml(s, iss, 'cv-big'),
+      img: iss[3] ? imgUrl(iss[3]) : '',
+      info: () => {
+        const key = KEY_AT.get(iss[0]);
+        const evs = (ARCS_OF.get(iss[0]) || []).map((id) => BYID['event-' + id]).filter(Boolean);
+        const cr = (CREDITS_AT.get(iss[0]) || []).filter(([, r]) => r === 'writer' || r === 'art');
+        const who = [...new Set(cr.map(([n]) => n))];
+        let h = `<h2>${esc(s.title)} <span>#${esc(iss[1])}</span></h2><div class="flip-sub">${esc(fmtDate(iss[2]))}${key ? ` · <b class="t-${key.type}">★ ${esc(TYPES[key.type].short)}</b>` : ''}${evs.length ? ` · ${esc(evs.map((e) => e.title).join(', '))}` : ''}</div>`;
+        if (key && key.summary) h += `<p>${esc(key.summary)}</p>`;
+        if (who.length) h += `<div class="flip-sub">${esc(who.join(', '))}</div>`;
+        return h;
+      },
+      open: () => openIssue(s, i),
+    }));
+  }
+  function flipItemEntries(items) {
+    return items.map((it) => ({
+      cover: () => coverHtml(it, 'full').replace('class="cv"', 'class="cv cv-big"'),
+      img: it.cover || '',
+      info: () => {
+        const who = [...new Set([...(it.writers || []), ...(it.artists || [])])];
+        let h = `<h2>${esc(label(it))}</h2><div class="flip-sub">${esc(fmtDate(it.date))} · <b class="t-${it.type}">${esc(TYPES[it.type].short)}</b> · ${esc(PUBS[it.publisher].label)}</div>`;
+        if (it.summary) h += `<p>${esc(it.summary)}</p>`;
+        if (who.length) h += `<div class="flip-sub">${esc(who.join(', '))}</div>`;
+        return h;
+      },
+      open: () => openItem(it.id),
+    }));
+  }
+  function openFlip(spec) {
+    const [kind, id, idx] = spec.split(':');
+    if (kind === 's') {
+      const s = SERIES_BY_ID.get(sidOf(id));
+      if (!s) return;
+      FLIP.list = flipSeriesEntries(s);
+      FLIP.i = clamp(+idx || 0, 0, FLIP.list.length - 1);
+    } else {
+      // Everything the timeline is showing right now, oldest first.
+      const vis = ITEMS.filter((it) => it.type !== 'event' && it.type !== 'milestone' && (matches(it) || it.id === spec.slice(2)));
+      FLIP.list = flipItemEntries(vis);
+      FLIP.i = Math.max(0, vis.findIndex((it) => it.id === spec.slice(2)));
+    }
+    if (!FLIP.list.length) return;
+    FLIP.start = FLIP.i;
+    hideTip();
+    $('#flip-range').max = String(FLIP.list.length - 1);
+    flipEl.hidden = false;
+    flipEl.focus();
+    flipShow();
+  }
+  function flipShow() {
+    const e = FLIP.list[FLIP.i];
+    $('#flip-cover').innerHTML = e.cover();
+    $('#flip-info').innerHTML = e.info();
+    $('#flip-pos').textContent = `${FLIP.i + 1} of ${FLIP.list.length}`;
+    $('#flip-range').value = String(FLIP.i);
+    $('#flip-prev').disabled = FLIP.i === 0;
+    $('#flip-next').disabled = FLIP.i === FLIP.list.length - 1;
+    // Load the next few covers ahead of time so flipping feels instant.
+    [1, 2, 3, -1].forEach((d) => { const n = FLIP.list[FLIP.i + d]; if (n && n.img) { const im = new Image(); im.referrerPolicy = 'no-referrer'; im.src = n.img; } });
+  }
+  function flipGo(d) {
+    const i = clamp(FLIP.i + d, 0, FLIP.list.length - 1);
+    if (i !== FLIP.i) { FLIP.i = i; flipShow(); }
+  }
+  function closeFlip(details) {
+    flipEl.hidden = true;
+    // Leave the details panel on the cover you stopped at.
+    if (details || FLIP.i !== FLIP.start) FLIP.list[FLIP.i].open();
+  }
+  $('#flip-prev').addEventListener('click', () => flipGo(-1));
+  $('#flip-next').addEventListener('click', () => flipGo(1));
+  $('#flip-close').addEventListener('click', () => closeFlip(false));
+  $('#flip-details').addEventListener('click', () => closeFlip(true));
+  $('#flip-range').addEventListener('input', (e) => { FLIP.i = +e.target.value; flipShow(); });
+  flipEl.addEventListener('keydown', (e) => {
+    if (e.target.id === 'flip-range' && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) return;
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === 'PageDown' || e.key === ' ') { e.preventDefault(); flipGo(1); }
+    else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'PageUp') { e.preventDefault(); flipGo(-1); }
+    else if (e.key === 'Home') { e.preventDefault(); flipGo(-FLIP.list.length); }
+    else if (e.key === 'End') { e.preventDefault(); flipGo(FLIP.list.length); }
+    else if (e.key === 'Enter' && !e.target.closest('button')) { e.preventDefault(); closeFlip(true); }
+  });
+  // Swipe left or right on the cover to flip.
+  let flipX = null;
+  $('#flip-stage').addEventListener('pointerdown', (e) => { if (!e.target.closest('button')) flipX = e.clientX; });
+  $('#flip-stage').addEventListener('pointerup', (e) => {
+    if (flipX == null) return;
+    const dx = e.clientX - flipX;
+    flipX = null;
+    if (Math.abs(dx) > 40) flipGo(dx < 0 ? 1 : -1);
+  });
 
   // Jump to a series' row in the series view and open it.
   function showSeries(id) {
@@ -1757,6 +1859,7 @@
       if (timeView() && was !== state.view) { stage.scrollTop = 0; stage.scrollLeft = X(midYear) - stage.clientWidth / 2; }
       return;
     }
+    if (t.dataset.flip) { openFlip(t.dataset.flip); return; }
     if (t.dataset.series) { showSeries(t.dataset.series); return; }
     if (t.dataset.spot) {
       const sp = SPOTS.find((x) => x.id === t.dataset.spot);
@@ -1944,7 +2047,8 @@
   });
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
-    if (!$('#print-sheet').hidden) $('#print-sheet').hidden = true;
+    if (!flipEl.hidden) closeFlip(false);
+    else if (!$('#print-sheet').hidden) $('#print-sheet').hidden = true;
     else if (!$('#modal').hidden) closeModal();
     else if (side.classList.contains('open')) closeSide();
     else if (!drawer.hidden) closeDrawer();
