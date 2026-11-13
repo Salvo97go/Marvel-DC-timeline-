@@ -16,6 +16,7 @@ No build step. Open `index.html` in a browser, or serve the folder (for example 
 - **Creator spotlights**: creators big enough to get their own lane, like Frank Frazetta, with their whole career including work outside Marvel and DC.
 - **Characters**: pick a hero or villain to follow just their issues, including the events they were part of.
 - **Events**: the purple bars. Open one for its reading order, core series and tie-ins.
+- **Big screen** (button in the toolbar, or press F): hides the menus, makes covers half again as large and goes full screen. Press play (or space) to auto-scroll slowly through history, and pick Slow, Medium or Fast. The controls fade when the mouse rests. Esc leaves.
 - **Flip through covers**: click the cover in any issue's panel (or "Flip through covers" on a series) to see covers full screen. Step through the whole run with the arrows, the arrow keys, a swipe, or the slider; "Details" opens the issue you stopped on.
 - **Print covers**: lay out the covers you're looking at (a series, an event's reading order, a hero's appearances, a creator's issues, or the timeline's key issues) in a grid, then print it or save it as a PDF. Pick covers per row and a year range.
 - **Search** matches titles, characters, writers, artists and notes.

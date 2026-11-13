@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
-<link rel="stylesheet" href="css/styles.css?v=202611130203">
+<link rel="stylesheet" href="css/styles.css?v=202611131424">
 </head>
 <body>
 <header class="top">
@@ -112,6 +112,7 @@
         <button type="button" class="chip" id="sv-oneshots" aria-pressed="false"><span class="sw" style="--c:var(--muted)"></span>One-shots</button>
       </div>
       <button type="button" class="btn ghost sm" id="btn-print" title="Print or save the covers you're looking at">Print covers</button>
+      <button type="button" class="btn ghost sm" id="btn-big" title="Big covers, no menus, auto-scroll (F)">Big screen</button>
       <div class="zoom" id="zoom-ctl">
         <button type="button" class="icon-btn" id="zoom-out" aria-label="Zoom out"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12"/></svg></button>
         <input type="range" id="zoom" min="0" max="1000" value="400" aria-label="Zoom">
@@ -184,17 +185,37 @@
   </div>
 </div>
 
+<div class="big-bar" id="big-bar" hidden>
+  <div class="big-now" id="big-now"></div>
+  <div class="big-ctl">
+    <button type="button" class="big-btn" id="big-play" aria-label="Auto-scroll" title="Auto-scroll (space)"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="i-play" d="M8 5v14l11-7z"/><path class="i-pause" d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg></button>
+    <div class="seg big-speed" role="group" aria-label="Scroll speed">
+      <button type="button" class="seg-btn" data-bigspeed="slow">Slow</button>
+      <button type="button" class="seg-btn" data-bigspeed="med">Medium</button>
+      <button type="button" class="seg-btn" data-bigspeed="fast">Fast</button>
+    </div>
+    <button type="button" class="big-btn" id="big-zout" aria-label="Zoom out"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12"/></svg></button>
+    <button type="button" class="big-btn" id="big-zin" aria-label="Zoom in"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12M12 6v12"/></svg></button>
+    <div class="seg big-views" role="group" aria-label="View">
+      <button type="button" class="seg-btn" data-view="timeline">Timeline</button>
+      <button type="button" class="seg-btn" data-view="series">Series</button>
+      <button type="button" class="seg-btn" data-view="grid">Covers</button>
+    </div>
+    <button type="button" class="btn sm" id="big-exit">Exit big screen</button>
+  </div>
+</div>
+
 <div class="tip" id="tip" hidden></div>
 <div class="toast" id="toast" hidden></div>
 
-<script src="data/marvel.js?v=202611130203"></script>
-<script src="data/dc.js?v=202611130203"></script>
-<script src="data/events.js?v=202611130203"></script>
-<script src="data/crossovers.js?v=202611130203"></script>
-<script src="data/covers.js?v=202611130203"></script>
-<script src="data/series.js?v=202611130203"></script>
-<script src="data/spotlights.js?v=202611130203"></script>
-<script src="data/manga.js?v=202611130203"></script>
-<script src="js/app.js?v=202611130203"></script>
+<script src="data/marvel.js?v=202611131424"></script>
+<script src="data/dc.js?v=202611131424"></script>
+<script src="data/events.js?v=202611131424"></script>
+<script src="data/crossovers.js?v=202611131424"></script>
+<script src="data/covers.js?v=202611131424"></script>
+<script src="data/series.js?v=202611131424"></script>
+<script src="data/spotlights.js?v=202611131424"></script>
+<script src="data/manga.js?v=202611131424"></script>
+<script src="js/app.js?v=202611131424"></script>
 </body>
 </html>

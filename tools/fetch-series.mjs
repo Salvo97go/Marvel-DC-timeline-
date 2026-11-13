@@ -62,7 +62,7 @@ for (const k of ['catalog', 'catalogDone', 'core', 'arcs', 'lists', 'heroes', 'e
 
 // Characters whose every appearance is pulled in, and the creators whose
 // credits are tracked. Names must match Metron's.
-const HEROES = ['Batman', 'Spider-Man', 'Captain America', 'Iron Man'];
+const HEROES = ['Batman', 'Spider-Man', 'Captain America', 'Iron Man', 'Superman', 'Wonder Woman', 'Wolverine', 'Hulk', 'Thor'];
 const CREATORS = [
   // Batman
   'Bob Kane', 'Bill Finger', 'Jerry Robinson', 'Dick Sprang', 'Sheldon Moldoff', 'Carmine Infantino', 'Gardner Fox',
@@ -84,12 +84,25 @@ const CREATORS = [
   // Iron Man
   'Don Heck', 'Archie Goodwin', 'George Tuska', 'Bob Layton', 'Mark Bright', 'Len Kaminski', 'Kurt Busiek', 'Sean Chen',
   'Warren Ellis', 'Adi Granov', 'Matt Fraction', 'Salvador Larroca', 'Kieron Gillen', 'Christopher Cantwell', 'Valerio Schiti',
+  // Superman
+  'Jerry Siegel', 'Joe Shuster', 'Wayne Boring', 'Otto Binder', 'Al Plastino', 'Curt Swan', 'Elliot S! Maggin', 'Jerry Ordway',
+  'Louise Simonson', 'Jon Bogdanove', 'Geoff Johns', 'Gary Frank', 'Peter J. Tomasi', 'Patrick Gleason', 'Ivan Reis', 'Joshua Williamson',
+  // Wonder Woman
+  'William Moulton Marston', 'H.G. Peter', 'Robert Kanigher', 'Mike Sekowsky', 'George Pérez', 'William Messner-Loebs', 'Phil Jimenez',
+  'Gail Simone', 'Terry Dodson', 'Brian Azzarello', 'Cliff Chiang', 'Nicola Scott', 'Liam Sharp', 'G. Willow Wilson', 'Daniel Sampere',
+  // Wolverine
+  'Len Wein', 'Herb Trimpe', 'Chris Claremont', 'Dave Cockrum', 'John Buscema', 'Barry Windsor-Smith', 'Larry Hama', 'Marc Silvestri',
+  'Adam Kubert', 'Mark Millar', 'Steve McNiven', 'Jason Aaron', 'Benjamin Percy', 'Charles Soule',
+  // Hulk
+  'Marie Severin', 'Bill Mantlo', 'Dale Keown', 'Bruce Jones', 'Greg Pak', 'Ed McGuinness', 'Al Ewing', 'Joe Bennett', 'Phillip Kennedy Johnson', 'Nic Klein',
+  // Thor
+  'Larry Lieber', 'Walt Simonson', 'Olivier Coipel', 'Esad Ribić', 'Russell Dauterman', 'Donny Cates',
   // Spotlights
   'Brent Schoonover'
 ];
 const SPOTLIGHT_CREATORS = ['Brent Schoonover'];
 // Metron's spelling, where it differs from the name used in the app.
-const CREATOR_SEARCH = { "Denny O'Neil": ["Dennis O'Neil", "Denny O'Neil"], 'J.M. DeMatteis': ['J.M. DeMatteis', 'J. M. DeMatteis'], 'Marcos Martín': ['Marcos Martin'], 'Mikel Janín': ['Mikel Janin'], 'Tony S. Daniel': ['Tony Daniel'], 'Leinil Francis Yu': ['Leinil Yu'], 'Mark Bright': ['Mark D. Bright'], 'Jesús Saiz': ['Jesus Saiz'], 'Jorge Jiménez': ['Jorge Jimenez'] };
+const CREATOR_SEARCH = { "Denny O'Neil": ["Dennis O'Neil", "Denny O'Neil"], 'J.M. DeMatteis': ['J.M. DeMatteis', 'J. M. DeMatteis'], 'Marcos Martín': ['Marcos Martin'], 'Mikel Janín': ['Mikel Janin'], 'Tony S. Daniel': ['Tony Daniel'], 'Leinil Francis Yu': ['Leinil Yu'], 'Mark Bright': ['Mark D. Bright'], 'Jesús Saiz': ['Jesus Saiz'], 'Jorge Jiménez': ['Jorge Jimenez'], 'H.G. Peter': ['Harry G. Peter', 'H. G. Peter'], 'George Pérez': ['George Perez'], 'Esad Ribić': ['Esad Ribic'], 'Elliot S! Maggin': ['Elliot S. Maggin', 'Elliot Maggin'] };
 const COLLECTED = /trade|hard ?cover|omnibus|digest|compendium|reprint/i;
 // Written often during a run; compression keeps the committed file small.
 let lastSave = 0;

@@ -51,11 +51,18 @@
   let ERAS = US_ERAS;
   function setEras() { ERAS = state.pub === 'manga' && MANGA_ERAS.length ? MANGA_ERAS : US_ERAS; }
   const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  const SIZES = {
+  const SIZES_NORMAL = {
     full: { w: 92, h: 182, gap: 10 },
     mini: { w: 34, h: 51, gap: 4 },
     dot: { w: 10, h: 10, gap: 3 }
   };
+  // Big-screen mode: covers half again as large, for a monitor across the room.
+  const SIZES_BIG = {
+    full: { w: 138, h: 262, gap: 14 },
+    mini: { w: 52, h: 78, gap: 6 },
+    dot: { w: 14, h: 14, gap: 4 }
+  };
+  let SIZES = SIZES_NORMAL;
 
   // ── Storage (per-browser; everything still works without it) ──────
   const store = {
@@ -1101,7 +1108,7 @@
   const AXIS_H = 50;
   const EV_ROW = 17;
   const coverMode = () => state.ppy >= 300;
-  const thumbW = () => Math.min(48, (state.ppy / 12) * 0.9);
+  const thumbW = () => Math.min(SIZES === SIZES_BIG ? 76 : 48, (state.ppy / 12) * 0.9);
   const rowH = () => (coverMode() ? Math.round(thumbW() * 1.5 + 12) : 24);
 
   function computeSvRows() {
@@ -1664,6 +1671,96 @@
     if (Math.abs(dx) > 40) flipGo(dx < 0 ? 1 : -1);
   });
 
+  // ── Big-screen mode ──────────────────────────────────────────────
+  // Hides the menus, makes covers bigger and can scroll by itself, for
+  // reading along on a monitor or TV. The controls fade out when the mouse
+  // rests and come back when it moves.
+  const BIG = { on: false, playing: false, speed: (store.get('big', {}) || {}).speed || 'med', raf: 0, last: 0, carry: 0, idle: 0 };
+  const BIG_PX = { slow: 30, med: 70, fast: 160 }; // pixels per second
+  const bigBar = $('#big-bar');
+  function setBig(on) {
+    if (on === BIG.on) return;
+    BIG.on = on;
+    const mid = timeView() ? yearAt(stage.scrollLeft + stage.clientWidth / 2) : null;
+    document.body.classList.toggle('big', on);
+    SIZES = on ? SIZES_BIG : SIZES_NORMAL;
+    bigBar.hidden = !on;
+    if (!on) bigPlay(false);
+    const fs = document.fullscreenElement;
+    if (on && !fs && document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => {});
+    if (!on && fs && document.exitFullscreen) document.exitFullscreen().catch(() => {});
+    closeSide();
+    refresh();
+    if (mid != null && timeView()) stage.scrollLeft = X(mid) - stage.clientWidth / 2;
+    syncBig();
+    bigWake();
+    stage.focus({ preventScroll: true });
+  }
+  function syncBig() {
+    document.querySelectorAll('[data-bigspeed]').forEach((b) => b.classList.toggle('on', b.dataset.bigspeed === BIG.speed));
+    document.querySelectorAll('.big-views [data-view]').forEach((b) => b.classList.toggle('on', b.dataset.view === state.view));
+    $('#big-play').classList.toggle('playing', BIG.playing);
+    $('#big-play').setAttribute('aria-label', BIG.playing ? 'Pause auto-scroll' : 'Auto-scroll');
+    $('#btn-big').classList.toggle('on', BIG.on);
+    if (BIG.on) {
+      const y = timeView() ? Math.floor(yearAt(stage.scrollLeft + stage.clientWidth / 2)) : null;
+      const era = y != null && ERAS.find((e) => y >= e.start && y < e.end);
+      const what = [state.char, state.creator, state.event && (BYID['event-' + state.event] || {}).title, state.q && `“${state.q}”`].filter(Boolean).join(' · ');
+      $('#big-now').innerHTML = `${y != null ? `<b>${y}</b>${era ? `<span>${esc(era.name)}</span>` : ''}` : ''}${what ? `<span>${esc(what)}</span>` : ''}`;
+    }
+  }
+  function bigPlay(on) {
+    BIG.playing = on;
+    cancelAnimationFrame(BIG.raf);
+    if (on) { BIG.last = 0; BIG.carry = 0; BIG.raf = requestAnimationFrame(bigTick); }
+    syncBig();
+  }
+  function bigTick(t) {
+    if (!BIG.playing) return;
+    const dt = BIG.last ? Math.min(0.1, (t - BIG.last) / 1000) : 0;
+    BIG.last = t;
+    // Scroll positions are whole pixels, so keep the fraction for next frame.
+    BIG.carry += BIG_PX[BIG.speed] * dt;
+    const step = Math.floor(BIG.carry);
+    if (step) {
+      BIG.carry -= step;
+      if (timeView()) {
+        const before = stage.scrollLeft;
+        stage.scrollLeft = before + step;
+        if (stage.scrollLeft === before) { bigPlay(false); return; }
+      } else {
+        const before = stage.scrollTop;
+        stage.scrollTop = before + step;
+        if (stage.scrollTop === before) { bigPlay(false); return; }
+      }
+    }
+    BIG.raf = requestAnimationFrame(bigTick);
+  }
+  // Fade the controls and cursor when the mouse rests.
+  function bigWake() {
+    if (!BIG.on) return;
+    document.body.classList.remove('big-idle');
+    clearTimeout(BIG.idle);
+    BIG.idle = setTimeout(() => { if (!bigBar.matches(':hover')) document.body.classList.add('big-idle'); }, 2500);
+  }
+  $('#btn-big').addEventListener('click', () => setBig(!BIG.on));
+  $('#big-exit').addEventListener('click', () => setBig(false));
+  $('#big-play').addEventListener('click', () => bigPlay(!BIG.playing));
+  $('#big-zin').addEventListener('click', () => { if (timeView()) setZoom(state.ppy * 1.4); });
+  $('#big-zout').addEventListener('click', () => { if (timeView()) setZoom(state.ppy / 1.4); });
+  document.addEventListener('pointermove', bigWake, { passive: true });
+  document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && BIG.on) setBig(false); });
+  // Grabbing the timeline yourself pauses the auto-scroll.
+  stage.addEventListener('wheel', () => { if (BIG.playing) bigPlay(false); }, { passive: true });
+  stage.addEventListener('pointerdown', () => { if (BIG.playing) bigPlay(false); });
+  stage.addEventListener('scroll', () => { if (BIG.on) syncBig(); }, { passive: true });
+  document.addEventListener('keydown', (e) => {
+    if (e.target.closest('input, textarea, select') || !flipEl.hidden || !$('#modal').hidden || !$('#print-sheet').hidden) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.key === 'f' || e.key === 'F') { e.preventDefault(); setBig(!BIG.on); }
+    else if (BIG.on && e.key === ' ' && !e.target.closest('button')) { e.preventDefault(); bigPlay(!BIG.playing); bigWake(); }
+  });
+
   // Jump to a series' row in the series view and open it.
   function showSeries(id) {
     const s = SERIES_BY_ID.get(sidOf(id));
@@ -1857,6 +1954,7 @@
       if (state.view !== 'series') { SV.sel = null; SV.selSeries = null; }
       refresh();
       if (timeView() && was !== state.view) { stage.scrollTop = 0; stage.scrollLeft = X(midYear) - stage.clientWidth / 2; }
+      if (BIG.on) { bigPlay(false); syncBig(); }
       return;
     }
     if (t.dataset.flip) { openFlip(t.dataset.flip); return; }
@@ -1878,6 +1976,7 @@
       if (s) openIssue(s, +idx);
       return;
     }
+    if (t.dataset.bigspeed) { BIG.speed = t.dataset.bigspeed; store.set('big', { speed: BIG.speed }); syncBig(); if (!BIG.playing) bigPlay(true); return; }
     if (t.dataset.svgroup) { state.svGroup = t.dataset.svgroup; refresh(); return; }
     if (t.id === 'sv-oneshots') { state.svOneShots = !state.svOneShots; refresh(); return; }
     if (t.dataset.type && t.classList.contains('chip')) {
@@ -2048,6 +2147,7 @@
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
     if (!flipEl.hidden) closeFlip(false);
+    else if (BIG.on && drawer.hidden && $('#modal').hidden && $('#print-sheet').hidden) setBig(false);
     else if (!$('#print-sheet').hidden) $('#print-sheet').hidden = true;
     else if (!$('#modal').hidden) closeModal();
     else if (side.classList.contains('open')) closeSide();

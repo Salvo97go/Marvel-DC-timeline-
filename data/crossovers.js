@@ -30,7 +30,7 @@ window.TIMELINE.roles = {
     "Joker", "Catwoman", "Lex Luthor", "Penguin", "Scarecrow", "Two-Face", "Cheetah", "Riddler", "Brainiac", "Bizarro", "Mr. Freeze", "Metallo",
     "Gorilla Grodd", "Starro", "General Zod", "Sinestro", "Reverse-Flash", "Poison Ivy", "Darkseid", "Ra's al Ghul", "Talia al Ghul", "Deathstroke",
     "Anti-Monitor", "Doomsday", "Bane", "Cyborg Superman", "Parallax", "Hush", "Maxwell Lord", "Black Glove", "Black Hand", "Court of Owls",
-    "The Batman Who Laughs", "Punchline", "Harley Quinn", "Ozymandias", "Parasite", "Dark Phoenix", "Shaper of Worlds", "Celestials", "Viper", "Arnim Zola", "Obadiah Stane"
+    "The Batman Who Laughs", "Punchline", "Harley Quinn", "Ozymandias", "Parasite", "Dark Phoenix", "Shaper of Worlds", "Celestials", "Viper", "Arnim Zola", "Obadiah Stane", "Maestro", "Gorr"
   ],
   hero: [
     "Human Torch (Jim Hammond)", "Namor", "Captain America", "Bucky", "Groot", "Fantastic Four", "Mister Fantastic", "Invisible Woman",
@@ -41,7 +41,7 @@ window.TIMELINE.roles = {
     "Gamora", "Moon Knight", "Star-Lord", "Rocket Raccoon", "Kitty Pryde", "Emma Frost", "She-Hulk", "Phoenix", "Elektra", "Rogue",
     "New Mutants", "X-Factor", "Morlocks", "Cable", "Gambit", "Deadpool", "Domino", "Adam Warlock", "Thunderbolts", "Jessica Jones", "Runaways",
     "X-23", "Winter Soldier", "Nick Fury", "Guardians of the Galaxy", "Miles Morales", "Kate Bishop", "Kamala Khan", "Spider-Gwen", "Medusa",
-    "Illuminati", "Black Bolt", "Riri Williams", "Moira MacTaggert", "Sentry", "U.S. Agent", "Isaiah Bradley", "Rick Jones", "War Machine", "Pepper Potts",
+    "Illuminati", "Black Bolt", "Riri Williams", "Moira MacTaggert", "Sentry", "U.S. Agent", "Isaiah Bradley", "Rick Jones", "War Machine", "Pepper Potts", "Beta Ray Bill", "Hercules", "Jane Foster", "Red Hulk",
     "Superman", "Lois Lane", "Batman", "Commissioner Gordon", "Flash (Jay Garrick)", "Hawkman (Carter Hall)", "Spectre", "Robin (Dick Grayson)",
     "Green Lantern (Alan Scott)", "Justice Society of America", "Aquaman", "Green Arrow", "Wonder Woman", "Superboy", "Martian Manhunter",
     "Flash (Barry Allen)", "Legion of Super-Heroes", "Supergirl", "Green Lantern (Hal Jordan)", "Justice League of America", "Doom Patrol",
@@ -50,6 +50,6 @@ window.TIMELINE.roles = {
     "Rorschach", "Doctor Manhattan", "Nite Owl", "Silk Spectre", "Flash (Wally West)", "Blue Beetle", "Suicide Squad", "Amanda Waller",
     "Deadshot", "Dream", "Tim Drake", "Steel", "Eradicator", "Green Lantern (Kyle Rayner)", "Starman (Jack Knight)", "Red Hood",
     "Blue Beetle (Jaime Reyes)", "Damian Wayne", "Robin (Damian Wayne)", "Batwoman (Kate Kane)", "Green Lantern (Hal Jordan)",
-    "Batman (Dick Grayson)", "Deadman", "Batman (Thomas Wayne)", "Mister Miracle", "Big Barda", "Monitors"
+    "Batman (Dick Grayson)", "Deadman", "Batman (Thomas Wayne)", "Mister Miracle", "Big Barda", "Monitors", "Artemis"
   ]
 };

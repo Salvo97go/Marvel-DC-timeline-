@@ -119,6 +119,40 @@ window.TIMELINE.marvel = [
   { date: "1997-04", title: "Thunderbolts", issue: "1", type: "launch", characters: ["Thunderbolts", "Baron Zemo"], writers: ["Kurt Busiek"], artists: ["Mark Bagley"], summary: "The twist: the new heroes are the Masters of Evil in disguise." },
   { date: "1998-11", title: "Daredevil", issue: "1", type: "launch", characters: ["Daredevil"], writers: ["Kevin Smith"], artists: ["Joe Quesada"], summary: "Launches the Marvel Knights imprint." },
 
+  // ── Wolverine through the decades ─────────────────────────────────────────
+  { date: "1980-05", title: "X-Men", issue: "133", type: "key", characters: ["Wolverine", "X-Men", "Hellfire Club"], writers: ["Chris Claremont", "John Byrne"], artists: ["John Byrne"], summary: "\"Wolverine: Alone!\" He fights through the Hellfire Club's guards single-handed, a breakout issue for the character." },
+  { date: "1988-11", title: "Wolverine", issue: "1", type: "launch", characters: ["Wolverine"], writers: ["Chris Claremont"], artists: ["John Buscema"], summary: "His first ongoing series, set in the island nation of Madripoor." },
+  { date: "1991-03", title: "Marvel Comics Presents", issue: "72", type: "key", characters: ["Wolverine"], writers: ["Barry Windsor-Smith"], artists: ["Barry Windsor-Smith"], summary: "\"Weapon X\" begins: how Logan got his adamantium skeleton." },
+  { date: "2000-07", title: "X-Men (film)", issue: "", type: "milestone", characters: ["Wolverine", "X-Men"], writers: [], artists: [], summary: "Hugh Jackman plays Wolverine for the first time. He plays the role in nine more films." },
+  { date: "2001-11", title: "Origin", issue: "1", type: "key", characters: ["Wolverine"], writers: ["Paul Jenkins"], artists: ["Andy Kubert"], summary: "Wolverine's childhood as James Howlett in 19th-century Canada, finally revealed." },
+  { date: "2004-12", title: "Wolverine", issue: "20", type: "key", characters: ["Wolverine", "Hydra"], writers: ["Mark Millar"], artists: ["John Romita Jr."], summary: "\"Enemy of the State\": Hydra and the Hand kill Wolverine and turn him into their weapon." },
+  { date: "2008-08", title: "Wolverine", issue: "66", type: "key", characters: ["Wolverine"], writers: ["Mark Millar"], artists: ["Steve McNiven"], summary: "\"Old Man Logan\" begins in a future where the villains won." },
+  { date: "2011-12", title: "Wolverine and the X-Men", issue: "1", type: "launch", characters: ["Wolverine", "X-Men", "Kitty Pryde"], writers: ["Jason Aaron"], artists: ["Chris Bachalo"], summary: "Wolverine becomes headmaster of the new Jean Grey School." },
+  { date: "2018-11", title: "Return of Wolverine", issue: "1", type: "key", characters: ["Wolverine"], writers: ["Charles Soule"], artists: ["Steve McNiven"], summary: "Logan comes back after four years dead." },
+  { date: "2020-04", title: "Wolverine", issue: "1", type: "launch", characters: ["Wolverine"], writers: ["Benjamin Percy"], artists: ["Adam Kubert"], summary: "Wolverine in the Krakoa era." },
+
+  // ── Hulk through the decades ──────────────────────────────────────────────
+  { date: "1964-10", title: "Tales to Astonish", issue: "60", type: "launch", characters: ["Hulk"], writers: ["Stan Lee"], artists: ["Steve Ditko"], summary: "After his own series was canceled at issue #6, the Hulk gets a regular feature again." },
+  { date: "1968-04", title: "The Incredible Hulk", issue: "102", type: "launch", characters: ["Hulk"], writers: ["Stan Lee"], artists: ["Marie Severin"], summary: "Tales to Astonish becomes The Incredible Hulk, keeping its numbering." },
+  { date: "1977-11", title: "The Incredible Hulk (TV series)", issue: "", type: "milestone", characters: ["Hulk"], writers: [], artists: [], summary: "Bill Bixby and Lou Ferrigno star in the TV series, which runs until 1982." },
+  { date: "1987-05", title: "The Incredible Hulk", issue: "331", type: "key", characters: ["Hulk", "Rick Jones"], writers: ["Peter David"], artists: ["Todd McFarlane"], summary: "Peter David's 12-year run begins, with the grey Hulk." },
+  { date: "1991-01", title: "The Incredible Hulk", issue: "377", type: "key", characters: ["Hulk"], writers: ["Peter David"], artists: ["Dale Keown"], summary: "Bruce Banner's personalities merge into the \"Professor\" Hulk." },
+  { date: "1993-01", title: "Hulk: Future Imperfect", issue: "1", type: "key", characters: ["Hulk", "Maestro"], writers: ["Peter David"], artists: ["George Pérez"], summary: "The Hulk meets the Maestro, his tyrant future self." },
+  { date: "2008-03", title: "Hulk", issue: "1", type: "launch", characters: ["Hulk", "Red Hulk"], writers: ["Jeph Loeb"], artists: ["Ed McGuinness"], summary: "The Red Hulk arrives." },
+  { date: "2016-02", title: "Totally Awesome Hulk", issue: "1", type: "launch", characters: ["Hulk"], writers: ["Greg Pak"], artists: ["Frank Cho"], summary: "Teen genius Amadeus Cho becomes the Hulk." },
+  { date: "2023-08", title: "Incredible Hulk", issue: "1", type: "launch", characters: ["Hulk"], writers: ["Phillip Kennedy Johnson"], artists: ["Nic Klein"], summary: "A Hulk horror road story, following Immortal Hulk." },
+
+  // ── Thor through the decades ──────────────────────────────────────────────
+  { date: "1966-03", title: "Thor", issue: "126", type: "launch", characters: ["Thor", "Hercules"], writers: ["Stan Lee"], artists: ["Jack Kirby"], summary: "Journey into Mystery becomes Thor, keeping its numbering." },
+  { date: "1983-11", title: "Thor", issue: "337", type: "key", characters: ["Thor", "Beta Ray Bill"], writers: ["Walt Simonson"], artists: ["Walt Simonson"], summary: "Walt Simonson's run begins: Beta Ray Bill lifts the hammer." },
+  { date: "1998-07", title: "Thor", issue: "1", type: "launch", characters: ["Thor"], writers: ["Dan Jurgens"], artists: ["John Romita Jr."], summary: "Thor's series relaunches after Heroes Return." },
+  { date: "2004-12", title: "Thor", issue: "85", type: "key", characters: ["Thor", "Loki"], writers: ["Michael Avon Oeming"], artists: ["Andrea Di Vito"], summary: "The end of \"Ragnarok\": Thor ends the cycle of Asgard's destruction, and the series ends." },
+  { date: "2007-09", title: "Thor", issue: "1", type: "launch", characters: ["Thor"], writers: ["J. Michael Straczynski"], artists: ["Olivier Coipel"], summary: "Thor returns and rebuilds Asgard over Oklahoma." },
+  { date: "2011-05", title: "Thor (film)", issue: "", type: "milestone", characters: ["Thor", "Loki"], writers: [], artists: [], summary: "Chris Hemsworth plays Thor for the first time in the Marvel Cinematic Universe." },
+  { date: "2013-01", title: "Thor: God of Thunder", issue: "1", type: "launch", characters: ["Thor", "Gorr"], writers: ["Jason Aaron"], artists: ["Esad Ribić"], summary: "Jason Aaron's seven-year Thor saga begins with Gorr the God Butcher." },
+  { date: "2014-12", title: "Thor", issue: "1", type: "launch", characters: ["Thor", "Jane Foster"], writers: ["Jason Aaron"], artists: ["Russell Dauterman"], summary: "A mystery woman lifts the hammer. She is revealed as Jane Foster." },
+  { date: "2020-03", title: "Thor", issue: "1", type: "launch", characters: ["Thor", "Galactus"], writers: ["Donny Cates"], artists: ["Nic Klein"], summary: "Thor becomes King of Asgard and a herald of Galactus." },
+
   // ── Captain America through the decades ───────────────────────────
   { date: "1964-11", title: "Tales of Suspense", issue: "59", type: "launch", characters: ["Captain America"], writers: ["Stan Lee"], artists: ["Jack Kirby"], summary: "Cap gets his own feature again, sharing the book with Iron Man." },
   { date: "1968-04", title: "Captain America", issue: "100", type: "launch", characters: ["Captain America", "Black Panther", "Baron Zemo"], writers: ["Stan Lee"], artists: ["Jack Kirby"], summary: "Tales of Suspense becomes Captain America, keeping its numbering. Cap's own series for the first time since 1950." },
