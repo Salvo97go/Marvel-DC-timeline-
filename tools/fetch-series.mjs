@@ -62,6 +62,8 @@ for (const k of ['catalog', 'catalogDone', 'core', 'arcs', 'lists', 'heroes', 'e
 
 // Characters whose every appearance is pulled in, and the creators whose
 // credits are tracked. Names must match Metron's.
+// Metron ids for heroes whose plain name matches someone else first.
+const HERO_IDS = { Thor: 138 }; // "Thor (Marvel)"
 const HEROES = ['Batman', 'Spider-Man', 'Captain America', 'Iron Man', 'Superman', 'Wonder Woman', 'Wolverine', 'Hulk', 'Thor'];
 const CREATORS = [
   // Batman
@@ -102,7 +104,7 @@ const CREATORS = [
 ];
 const SPOTLIGHT_CREATORS = ['Brent Schoonover'];
 // Metron's spelling, where it differs from the name used in the app.
-const CREATOR_SEARCH = { "Denny O'Neil": ["Dennis O'Neil", "Denny O'Neil"], 'J.M. DeMatteis': ['J.M. DeMatteis', 'J. M. DeMatteis'], 'Marcos Martín': ['Marcos Martin'], 'Mikel Janín': ['Mikel Janin'], 'Tony S. Daniel': ['Tony Daniel'], 'Leinil Francis Yu': ['Leinil Yu'], 'Mark Bright': ['Mark D. Bright'], 'Jesús Saiz': ['Jesus Saiz'], 'Jorge Jiménez': ['Jorge Jimenez'], 'H.G. Peter': ['Harry G. Peter', 'H. G. Peter'], 'George Pérez': ['George Perez'], 'Esad Ribić': ['Esad Ribic'], 'Elliot S! Maggin': ['Elliot S. Maggin', 'Elliot Maggin'] };
+const CREATOR_SEARCH = { "Denny O'Neil": ["Dennis O'Neil", "Denny O'Neil"], 'J.M. DeMatteis': ['J.M. DeMatteis', 'J. M. DeMatteis'], 'Marcos Martín': ['Marcos Martin'], 'Mikel Janín': ['Mikel Janin'], 'Tony S. Daniel': ['Tony Daniel'], 'Leinil Francis Yu': ['Leinil Yu'], 'Mark Bright': ['Mark D. Bright'], 'Jesús Saiz': ['Jesus Saiz'], 'Jorge Jiménez': ['Jorge Jimenez'], 'H.G. Peter': ['Harry G. Peter', 'H. G. Peter'], 'George Pérez': ['George Perez'], 'Esad Ribić': ['Esad Ribic'], 'Elliot S! Maggin': ['Elliot S. Maggin', 'Elliot Maggin'], 'Walt Simonson': ['Walter Simonson'], 'William Messner-Loebs': ['Bill Messner-Loebs'] };
 const COLLECTED = /trade|hard ?cover|omnibus|digest|compendium|reprint/i;
 // Written often during a run; compression keeps the committed file small.
 let lastSave = 0;
@@ -265,9 +267,9 @@ async function coreSeriesArc(ev) {
 // ── 3b. Every appearance of each hero, and the series they're regulars in
 async function heroes() {
   for (const hero of HEROES) {
-    if (cache.heroes[hero]) continue;
-    const found = await getAll('/character/' + qs({ name: hero }));
-    const ch = found.find((c) => norm(c.name) === norm(hero));
+    if (cache.heroes[hero] && (!HERO_IDS[hero] || cache.heroes[hero].id === HERO_IDS[hero])) continue;
+    const ch = HERO_IDS[hero] ? { id: HERO_IDS[hero] }
+      : (await getAll('/character/' + qs({ name: hero }))).find((c) => norm(c.name) === norm(hero));
     if (!ch) { console.log(`  – no character "${hero}"`); continue; }
     console.log(`Listing every ${hero} appearance…`);
     const issues = await getAll(`/character/${ch.id}/issue_list/`);
