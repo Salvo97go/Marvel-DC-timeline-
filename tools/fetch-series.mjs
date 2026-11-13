@@ -83,8 +83,11 @@ const CREATORS = [
   'Ron Garney', 'Dan Jurgens', 'Steve Epting', 'Rick Remender', 'Ta-Nehisi Coates', 'Leinil Francis Yu', 'Jesús Saiz', 'Chris Samnee',
   // Iron Man
   'Don Heck', 'Archie Goodwin', 'George Tuska', 'Bob Layton', 'Mark Bright', 'Len Kaminski', 'Kurt Busiek', 'Sean Chen',
-  'Warren Ellis', 'Adi Granov', 'Matt Fraction', 'Salvador Larroca', 'Kieron Gillen', 'Christopher Cantwell', 'Valerio Schiti'
+  'Warren Ellis', 'Adi Granov', 'Matt Fraction', 'Salvador Larroca', 'Kieron Gillen', 'Christopher Cantwell', 'Valerio Schiti',
+  // Spotlights
+  'Brent Schoonover'
 ];
+const SPOTLIGHT_CREATORS = ['Brent Schoonover'];
 // Metron's spelling, where it differs from the name used in the app.
 const CREATOR_SEARCH = { "Denny O'Neil": ["Dennis O'Neil", "Denny O'Neil"], 'J.M. DeMatteis': ['J.M. DeMatteis', 'J. M. DeMatteis'], 'Marcos Martín': ['Marcos Martin'], 'Mikel Janín': ['Mikel Janin'], 'Tony S. Daniel': ['Tony Daniel'], 'Leinil Francis Yu': ['Leinil Yu'], 'Mark Bright': ['Mark D. Bright'], 'Jesús Saiz': ['Jesus Saiz'], 'Jorge Jiménez': ['Jorge Jimenez'] };
 const COLLECTED = /trade|hard ?cover|omnibus|digest|compendium|reprint/i;
@@ -300,6 +303,8 @@ async function roles(limit) {
   Object.values(cache.heroes).forEach((h) => h && h.issues.forEach((i) => heroIds.add(i[0])));
   const want = new Set();
   Object.values(cache.creators).forEach((c) => c.issues.forEach((id) => { if (heroIds.has(id) && !cache.detail[id]) want.add(id); }));
+  // Spotlight creators have few enough credits to check every one.
+  SPOTLIGHT_CREATORS.forEach((n) => (cache.creators[n] || { issues: [] }).issues.forEach((id) => { if (!cache.detail[id]) want.add(id); }));
   const todo = [...want].slice(0, limit);
   console.log(`Fetching credits for ${todo.length} of ${want.size} issues…`);
   let n = 0;

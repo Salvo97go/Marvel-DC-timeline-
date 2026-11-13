@@ -106,6 +106,410 @@ window.TIMELINE.spotlights = [
     ]
   },
   {
+    "id": "schoonover",
+    "name": "Brent Schoonover",
+    "born": null,
+    "since": "2010",
+    "died": null,
+    "role": "Artist",
+    "summary": "An illustrator with a clean, retro look that suits pulp heroes and mid-century characters. He drew Marvel books such as Howling Commandos of S.H.I.E.L.D., Ant-Man, Captain Marvel and the Punisher, and DC's Batman '66. He has also become a busy cover artist for licensed and revival comics, including Doc Savage, Gargoyles, WWE and Dick Tracy. This spotlight is built from his credits in the Metron database: each entry shows whether he drew the interior art or the cover.",
+    "works": [
+      {
+        "date": "2010-11",
+        "title": "Hack / Slash: Trailers",
+        "issue": "2",
+        "type": "first",
+        "from": "Image",
+        "writers": [],
+        "summary": "His earliest credit in Metron: art on a short story in this Hack/Slash spin-off one-shot.",
+        "cover": "https://static.metron.cloud/media/issue/2025/06/24/ccd206900bed46f79bcbc50c006dc817.jpg"
+      },
+      {
+        "date": "2013-04",
+        "title": "Hoax Hunters",
+        "issue": "9",
+        "type": "key",
+        "from": "Image",
+        "writers": [
+          "Michael Moreci",
+          "Steve Seeley"
+        ],
+        "summary": "Interior art on an issue of the Image series about a team that investigates the supernatural.",
+        "cover": "https://static.metron.cloud/media/issue/2024/06/04/0a9025454d7647818adfdaf888cfc8d1.jpg"
+      },
+      {
+        "date": "2013-11",
+        "title": "Dark Horse Presents",
+        "issue": "30",
+        "type": "key",
+        "from": "Dark Horse",
+        "writers": [],
+        "summary": "Stories in six straight issues of Dark Horse's anthology, #30 to #35.",
+        "cover": "https://static.metron.cloud/media/issue/2023/11/20/279819d58a604b799e0ddabdff5ba5b2.jpg"
+      },
+      {
+        "date": "2014-03",
+        "title": "Adventures of Superman",
+        "issue": "46",
+        "type": "key",
+        "from": "DC",
+        "writers": [
+          "Joe Keatinge"
+        ],
+        "summary": "His first DC work, on the digital-first Superman anthology.",
+        "cover": "https://static.metron.cloud/media/issue/2025/12/27/fcbdba8948d74f44956bee5f2bebf0dd.jpg",
+        "characters": [
+          "Superman"
+        ]
+      },
+      {
+        "date": "2014-12",
+        "title": "Batman '66",
+        "issue": "16",
+        "type": "key",
+        "from": "DC",
+        "writers": [
+          "Jeff Parker"
+        ],
+        "summary": "Art for Jeff Parker's Batman '66, the comic based on the 1960s TV show. His retro style is a natural fit.",
+        "cover": "https://static.metron.cloud/media/issue/2025/05/10/7d84f7e671b3415b829fb76e89cc7172.jpg",
+        "characters": [
+          "Batman"
+        ],
+        "metronId": 145770
+      },
+      {
+        "date": "2015-01",
+        "title": "King: The Phantom",
+        "issue": "1",
+        "type": "launch",
+        "from": "Dynamite Entertainment",
+        "writers": [
+          "Brian Clevinger"
+        ],
+        "summary": "Art on the first issue of a pulp-hero revival starring the Phantom, one of the oldest costumed heroes.",
+        "cover": "https://static.metron.cloud/media/issue/2025/03/11/af18fe9587de48899f4bb86a9d234470.jpg",
+        "characters": [
+          "The Phantom"
+        ]
+      },
+      {
+        "date": "2015-03",
+        "title": "The Punisher",
+        "issue": "14",
+        "type": "key",
+        "from": "Marvel",
+        "writers": [
+          "Nathan Edmondson"
+        ],
+        "summary": "His first Marvel interiors. He also draws #17 and #18.",
+        "cover": "https://static.metron.cloud/media/issue/2023/03/08/e5e110fdbec74e62a1e62de0a575a104.jpg",
+        "characters": [
+          "Punisher"
+        ],
+        "metronId": 58233
+      },
+      {
+        "date": "2015-05",
+        "title": "Dark Horse Presents",
+        "issue": "10",
+        "type": "key",
+        "from": "Dark Horse",
+        "writers": [],
+        "summary": "A short story he both wrote and drew.",
+        "cover": "https://static.metron.cloud/media/issue/2024/02/06/95774d51c6344ca8873db76edc520833.jpg"
+      },
+      {
+        "date": "2015-09",
+        "title": "Ant-Man Annual",
+        "issue": "1",
+        "type": "key",
+        "from": "Marvel",
+        "writers": [
+          "Nick Spencer"
+        ],
+        "summary": "Art on Nick Spencer's Ant-Man annual, starring Scott Lang.",
+        "cover": "https://static.metron.cloud/media/issue/2019/08/21/ant-man-annual-1.jpg",
+        "characters": [
+          "Ant-Man"
+        ],
+        "metronId": 4799
+      },
+      {
+        "date": "2015-10",
+        "title": "Back to the Future",
+        "issue": "1",
+        "type": "launch",
+        "from": "IDW Publishing",
+        "writers": [
+          "Bob Gale",
+          "Erik Burnham"
+        ],
+        "summary": "Interior art and cover for the first issue of the IDW series co-written by the film's co-creator Bob Gale.",
+        "cover": "https://static.metron.cloud/media/issue/2026/01/21/844bc091122a4487a753c6ab4fecff5f.jpg"
+      },
+      {
+        "date": "2015-12",
+        "title": "Howling Commandos of S.H.I.E.L.D.",
+        "issue": "1",
+        "type": "launch",
+        "from": "Marvel",
+        "writers": [
+          "Frank Barbiere"
+        ],
+        "summary": "His first full series: all six issues, interiors and covers. Dum Dum Dugan leads S.H.I.E.L.D.'s team of monsters.",
+        "cover": "https://static.metron.cloud/media/issue/2021/06/27/howling-commandos-of-s-h-i-e-l-d-1.jpg",
+        "characters": [
+          "Howling Commandos"
+        ],
+        "metronId": 33226
+      },
+      {
+        "date": "2016-07",
+        "title": "The Astonishing Ant-Man",
+        "issue": "8",
+        "type": "key",
+        "from": "Marvel",
+        "writers": [
+          "Nick Spencer"
+        ],
+        "summary": "Back with Nick Spencer's Ant-Man. He also draws #12 and #13.",
+        "cover": "https://static.metron.cloud/media/issue/2019/08/20/astonishing-antman-8.jpg",
+        "characters": [
+          "Ant-Man"
+        ],
+        "metronId": 4790
+      },
+      {
+        "date": "2017-01",
+        "title": "WWE",
+        "issue": "1",
+        "type": "key",
+        "from": "BOOM! Studios",
+        "writers": [
+          "Dennis Hopeless",
+          "Ross Thibodeaux"
+        ],
+        "summary": "Covers for all of BOOM!'s WWE series, and interior art in #16.",
+        "cover": "https://static.metron.cloud/media/issue/2026/10/17/ea724cd0c6d94d4d945d8b572ecf1987.jpg"
+      },
+      {
+        "date": "2017-03",
+        "title": "Doc Savage: The Ring of Fire",
+        "issue": "1",
+        "type": "key",
+        "from": "Dynamite Entertainment",
+        "writers": [
+          "David Avallone"
+        ],
+        "summary": "Covers for a pulp-hero revival, in a style that fits the 1930s character.",
+        "cover": "https://static.metron.cloud/media/issue/2025/03/02/7b30e967c60f43269c6816aaa344f0a1.jpg",
+        "characters": [
+          "Doc Savage"
+        ]
+      },
+      {
+        "date": "2017-06",
+        "title": "The Mighty Captain Marvel",
+        "issue": "4",
+        "type": "key",
+        "from": "Marvel",
+        "writers": [
+          "Margaret Stohl"
+        ],
+        "summary": "Art on Margaret Stohl's Captain Marvel.",
+        "cover": "https://static.metron.cloud/media/issue/2022/02/25/the-mighty-captain-marvel-4.jpg",
+        "characters": [
+          "Carol Danvers"
+        ],
+        "metronId": 44226
+      },
+      {
+        "date": "2017-11",
+        "title": "Generations: Captain Marvel & Captain Mar-vell",
+        "issue": "1",
+        "type": "key",
+        "from": "Marvel",
+        "writers": [
+          "Margaret Stohl"
+        ],
+        "summary": "Interiors and cover: Carol Danvers meets the original Captain Marvel, Mar-Vell.",
+        "cover": "https://static.metron.cloud/media/issue/2024/11/19/Generations_-_Captain_Marvel__Captain_Mar-Vell_2017-_001-000.jpg",
+        "characters": [
+          "Carol Danvers",
+          "Captain Marvel (Mar-Vell)"
+        ],
+        "metronId": 132089
+      },
+      {
+        "date": "2017-12",
+        "title": "Captain Marvel",
+        "issue": "125",
+        "type": "key",
+        "from": "Marvel",
+        "writers": [
+          "Margaret Stohl",
+          "Robbie Thompson"
+        ],
+        "summary": "Art on the Captain Marvel issue where the series returns to its original numbering.",
+        "cover": "https://static.metron.cloud/media/issue/2021/06/13/captain-marvel-v11-125.jpg",
+        "characters": [
+          "Carol Danvers"
+        ],
+        "metronId": 32268
+      },
+      {
+        "date": "2018-08",
+        "title": "Infinity Countdown: Black Widow",
+        "issue": "1",
+        "type": "key",
+        "from": "Marvel",
+        "writers": [
+          "Gerry Duggan"
+        ],
+        "summary": "Art on Black Widow's Infinity Countdown one-shot.",
+        "cover": "https://static.metron.cloud/media/issue/2023/03/24/b7b7eb67e32c4866bf030af6dc867248.jpg",
+        "characters": [
+          "Black Widow"
+        ],
+        "metronId": 59762
+      },
+      {
+        "date": "2018-10",
+        "title": "The Ghost in the Shell: Global Neural Network",
+        "issue": "1",
+        "type": "key",
+        "from": "Kodansha USA",
+        "writers": [
+          "Alex de Campi",
+          "Brenden Fletcher",
+          "Genevieve Valentine"
+        ],
+        "summary": "An American anthology based on the Ghost in the Shell manga.",
+        "cover": "https://static.metron.cloud/media/issue/2026/08/27/6648298-01.jpg"
+      },
+      {
+        "date": "2019-02",
+        "title": "Merry X-Men Holiday Special",
+        "issue": "1",
+        "type": "key",
+        "from": "Marvel",
+        "writers": [],
+        "summary": "A story in Marvel's X-Men holiday anthology.",
+        "cover": "https://static.metron.cloud/media/issue/2021/09/23/merry-x-men-holiday-special-1.jpg",
+        "characters": [
+          "X-Men"
+        ],
+        "metronId": 38656
+      },
+      {
+        "date": "2019-03",
+        "title": "Suicide Squad",
+        "issue": "50",
+        "type": "key",
+        "from": "DC",
+        "writers": [
+          "Rob Williams"
+        ],
+        "summary": "Art on the 50th issue of the Rebirth Suicide Squad.",
+        "cover": "https://static.metron.cloud/media/issue/2021/12/17/suicide-squad-50.jpg",
+        "characters": [
+          "Suicide Squad"
+        ],
+        "metronId": 42011
+      },
+      {
+        "date": "2020-07",
+        "title": "Devil's Highway",
+        "issue": "1",
+        "type": "launch",
+        "from": "AWA Studios",
+        "writers": [
+          "Benjamin Percy"
+        ],
+        "summary": "A five-issue thriller miniseries written by Benjamin Percy. He drew the whole series and its covers. Volume 2 (2022) followed.",
+        "cover": "https://static.metron.cloud/media/issue/2020/07/06/devils-highway-1.jpg"
+      },
+      {
+        "date": "2022-12",
+        "title": "Gargoyles",
+        "issue": "1",
+        "type": "key",
+        "from": "Dynamite Entertainment",
+        "writers": [
+          "Greg Weisman"
+        ],
+        "summary": "Covers for the Gargoyles comics series, a continuation of the 1990s cartoon written by its co-creator Greg Weisman.",
+        "cover": "https://static.metron.cloud/media/issue/2023/10/26/5a21190d03bb48aebed967140927694d.jpg",
+        "characters": [
+          "Gargoyles"
+        ]
+      },
+      {
+        "date": "2024-04",
+        "title": "Dick Tracy",
+        "issue": "1",
+        "type": "key",
+        "from": "Mad Cave Studios",
+        "writers": [
+          "Alex Segura",
+          "Michael Moreci"
+        ],
+        "summary": "Covers for Mad Cave's Dick Tracy series.",
+        "cover": "https://static.metron.cloud/media/issue/2024/04/25/386a1fe1e5c04f7c817086b2eedfc3ce.jpg",
+        "characters": [
+          "Dick Tracy"
+        ]
+      },
+      {
+        "date": "2025-02",
+        "title": "Dick Tracy: Valentine's Day Special",
+        "issue": "1",
+        "type": "key",
+        "from": "Mad Cave Studios",
+        "writers": [],
+        "summary": "Interior art for Dick Tracy's Valentine's Day special.",
+        "cover": "https://static.metron.cloud/media/issue/2025/02/11/9e8edb94fbd64cd2bd9bea4d38f7f140.jpg",
+        "characters": [
+          "Dick Tracy"
+        ]
+      },
+      {
+        "date": "2025-04",
+        "title": "Defenders of the Earth",
+        "issue": "6",
+        "type": "key",
+        "from": "Mad Cave Studios",
+        "writers": [
+          "Dan DiDio"
+        ],
+        "summary": "Art on the 1980s comic-strip heroes' revival.",
+        "cover": "https://static.metron.cloud/media/issue/2025/03/07/c276616e935649449d5fc19cc317311c.jpg",
+        "characters": [
+          "Flash Gordon",
+          "The Phantom",
+          "Mandrake the Magician"
+        ]
+      },
+      {
+        "date": "2025-05",
+        "title": "The Amazing Spider-Man",
+        "issue": "70",
+        "type": "key",
+        "from": "Marvel",
+        "writers": [
+          "Joe Kelly"
+        ],
+        "summary": "A cover for The Amazing Spider-Man.",
+        "cover": "https://static.metron.cloud/media/issue/2025/03/16/90e0194cf7c249f1b6001f61a978a35e.jpg",
+        "characters": [
+          "Spider-Man"
+        ],
+        "metronId": 138707
+      }
+    ]
+  },
+  {
     id: 'tezuka',
     world: 'manga',
     name: 'Osamu Tezuka',

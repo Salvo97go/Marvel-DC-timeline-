@@ -569,14 +569,14 @@
   function renderSpotList() {
     $('#spot-list').innerHTML = SPOTS.map((sp) => {
       const n = sp.works.filter((w) => w.type !== 'milestone').length;
-      return `<li><button type="button" data-spot="${esc(sp.id)}" class="${state.creator === sp.name ? 'on' : ''}" style="--c:var(--spot)"><span class="dot"></span><span class="nm">${esc(sp.name)}</span><span class="yr">${String(sp.born).slice(0, 4)}</span><span class="ct">${n}</span></button></li>`;
+      return `<li><button type="button" data-spot="${esc(sp.id)}" class="${state.creator === sp.name ? 'on' : ''}" style="--c:var(--spot)"><span class="dot"></span><span class="nm">${esc(sp.name)}</span><span class="yr">${String(sp.born || sp.since).slice(0, 4)}</span><span class="ct">${n}</span></button></li>`;
     }).join('');
   }
 
   function spotlightHtml(sp) {
     const pub = 'spot-' + sp.id;
     const works = ITEMS.filter((it) => it.publisher === pub).sort((a, b) => a.y - b.y);
-    const life = `${fmtDate(sp.born)} – ${sp.died ? fmtDate(sp.died) : 'today'}${sp.birthplace ? ` · born in ${sp.birthplace}` : ''}`;
+    const life = sp.born ? `${fmtDate(sp.born)} – ${sp.died ? fmtDate(sp.died) : 'today'}${sp.birthplace ? ` · born in ${sp.birthplace}` : ''}` : `In comics since ${sp.since}`;
     let h = `<div class="d-meta spot-head"><div class="badges">${badge('Creator spotlight', 'var(--spot)')}${badge(sp.role, 'var(--muted)')}</div>
       <h2 class="d-title">${esc(sp.name)}</h2><div class="d-date">${esc(life)}</div></div>`;
     h += `<p class="d-summary">${esc(sp.summary)}</p>`;
@@ -1058,7 +1058,7 @@
     KEY_AT.clear();
     SERIES.forEach((s) => { s.keys = []; s.chars.clear(); s.creators.clear(); });
     ITEMS.forEach((it) => {
-      const id = it.mangaId || (T.links || {})[coverKey(it)];
+      const id = it.mangaId || it.metronId || (T.links || {})[coverKey(it)];
       if (!id) return;
       it.metron = id;
       KEY_AT.set(id, it);
